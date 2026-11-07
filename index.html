@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dartzähler">
+<title>Dartzähler</title>
+<!-- Optional (nur wenn über http/https ausgeliefert): PWA-Dateien liegen daneben. Als Einzeldatei funktioniert alles auch ohne sie. -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%23111'/%3E%3Ccircle cx='50' cy='50' r='40' fill='%23e8dcc0'/%3E%3Ccircle cx='50' cy='50' r='28' fill='%23d23a2f'/%3E%3Ccircle cx='50' cy='50' r='18' fill='%23e8dcc0'/%3E%3Ccircle cx='50' cy='50' r='8' fill='%231f8a4c'/%3E%3Ccircle cx='50' cy='50' r='3.5' fill='%23d23a2f'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#0b0f14; --panel:#151b23; --panel2:#1e2631; --line:#2b3542;
+  --text:#eef2f6; --muted:#8c98a5; --accent:#ffcc33; --accent-bg:#2b2410;
+  --green:#2fb36a; --red:#ef4b4b; --blue:#3b82f6;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  overscroll-behavior:none;touch-action:manipulation;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-text-size-adjust:100%}
+body{position:fixed;inset:0;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+.hidden{display:none!important}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+
+/* ---------- Buttons ---------- */
+.btn{border:0;border-radius:14px;background:var(--panel2);padding:14px 18px;font-size:18px;font-weight:700}
+.btn:active{filter:brightness(1.25);transform:scale(.98)}
+.btn.primary{background:var(--accent);color:#1a1400}
+.btn.green{background:var(--green);color:#04130a}
+.btn.danger{background:#3a1416;color:#ffb3b3}
+.btn.big{width:100%;padding:18px;font-size:22px}
+.btn:disabled{opacity:.35}
+
+/* ---------- Setup ---------- */
+.top{padding:14px 18px 6px}
+.top h1{margin:0;font-size:28px;letter-spacing:.3px}
+.scroll{flex:1;overflow-y:auto;padding:8px 14px 16px;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+.card{background:var(--panel);border-radius:16px;padding:14px;margin-bottom:12px}
+.card h2{margin:0 0 10px;font-size:15px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;background:var(--bg);padding:5px;border-radius:14px}
+.seg button{border:0;background:transparent;border-radius:10px;padding:14px 0;font-size:24px;font-weight:800;color:var(--muted)}
+.seg button.on{background:var(--accent);color:#1a1400}
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0}
+.switch-row + .switch-row{border-top:1px solid var(--line)}
+.switch-row span{font-size:20px;font-weight:700}
+.switch-row small{display:block;font-size:14px;font-weight:400;color:var(--muted);margin-top:2px}
+.switch-row input{display:none}
+.switch-row i{flex:none;width:60px;height:34px;border-radius:20px;background:#39424f;position:relative;transition:background .2s}
+.switch-row i::after{content:"";position:absolute;top:3px;left:3px;width:28px;height:28px;border-radius:50%;background:#fff;transition:transform .2s}
+.switch-row input:checked + i{background:var(--green)}
+.switch-row input:checked + i::after{transform:translateX(26px)}
+.stepper{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0}
+.stepper + .stepper{border-top:1px solid var(--line)}
+.stepper .lbl{font-size:20px;font-weight:700;min-width:54px}
+.stepper .ctl{display:flex;align-items:center;gap:8px}
+.stepper .ctl b{min-width:130px;text-align:center;font-size:17px}
+.stepper .ctl b small{display:block;color:var(--muted);font-weight:400;font-size:13px}
+.round{width:46px;height:46px;border-radius:50%;border:0;background:var(--panel2);font-size:26px;font-weight:700;line-height:1}
+.round:active{background:var(--line)}
+#plist{list-style:none;margin:0 0 10px;padding:0}
+#plist li{display:flex;align-items:center;gap:6px;background:var(--panel2);border-radius:12px;padding:6px 6px 6px 12px;margin-bottom:6px}
+#plist li .num{color:var(--muted);font-weight:700;width:22px}
+#plist li .nm{flex:1;font-size:20px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#plist li button{width:44px;height:44px;border:0;border-radius:10px;background:var(--panel);font-size:18px}
+#plist li button.del{color:var(--red)}
+#plist .empty{color:var(--muted);padding:6px 2px;background:none}
+#addForm{display:flex;gap:8px}
+#pname{flex:1;min-width:0;font-size:18px;padding:12px 14px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--text);
+  -webkit-user-select:text;user-select:text;outline:none}
+#pname:focus{border-color:var(--accent)}
+#addForm button{width:56px;border:0;border-radius:12px;background:var(--green);color:#04130a;font-size:28px;font-weight:800}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chips .hint{width:100%;font-size:13px;color:var(--muted)}
+.chip{border:1px solid var(--line);background:var(--panel2);border-radius:20px;padding:9px 14px;font-size:16px}
+.chip:active{background:var(--line)}
+.bottom{padding:10px 14px 14px;background:linear-gradient(transparent,var(--bg) 30%)}
+
+/* ---------- Spiel ---------- */
+.gtop{display:flex;align-items:center;gap:10px;padding:6px 10px 4px;min-height:42px}
+.icon{width:44px;height:36px;border-radius:10px;border:0;background:var(--panel2);font-size:20px}
+#matchInfo{flex:1;font-size:15px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#modeInfo{font-size:14px;color:var(--muted);font-weight:700;background:var(--panel);padding:5px 9px;border-radius:8px}
+.cards{display:flex;gap:6px;overflow-x:auto;padding:0 8px 4px;scrollbar-width:none;touch-action:pan-x;flex:none}
+.cards::-webkit-scrollbar{display:none}
+.pc{flex:1 0 30%;min-width:108px;background:var(--panel);border:2px solid transparent;border-radius:12px;padding:5px 8px;transition:background .2s,border-color .2s}
+.pc.on{border-color:var(--accent);background:var(--accent-bg)}
+.pc .pn{font-size:14px;font-weight:700;display:flex;justify-content:space-between;gap:4px;white-space:nowrap;overflow:hidden}
+.pc .pn span:first-child{overflow:hidden;text-overflow:ellipsis}
+.pc .lg{color:var(--accent);font-variant-numeric:tabular-nums}
+.pc .ps{font-size:30px;font-weight:900;line-height:1.05;font-variant-numeric:tabular-nums}
+.pc .pm,.pc .pl{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc .pl .bust{color:var(--red);font-weight:700}
+.active{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 14px 0;flex:none}
+.aleft{min-width:0}
+#aName{font-size:22px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#aStats{font-size:13px;color:var(--muted)}
+#aScore{font-size:clamp(58px,19vw,104px);font-weight:900;line-height:.92;color:var(--accent);font-variant-numeric:tabular-nums;letter-spacing:-2px}
+.aright{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.darts{display:flex;gap:5px}
+.darts .d{width:58px;height:42px;border-radius:10px;background:var(--panel2);display:flex;align-items:center;justify-content:center;
+  font-size:21px;font-weight:800;border:2px solid transparent;font-variant-numeric:tabular-nums}
+.darts .d.next{border-color:var(--accent)}
+.darts .d.zero{color:var(--muted)}
+.darts .d.void{color:var(--muted);text-decoration:line-through}
+#vSum{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums}
+#vSum small{font-size:14px;color:var(--muted);font-weight:600}
+#checkout{height:36px;flex:none;display:flex;align-items:center;justify-content:center;gap:8px;font-size:23px;font-weight:800;color:var(--green);letter-spacing:.3px}
+#checkout small{font-size:13px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px}
+#checkout.info{color:var(--blue);font-size:18px}
+.boardwrap{flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center;padding:0 2px}
+#board{width:100%;height:100%;display:block;touch-action:none;-webkit-user-select:none;user-select:none}
+#board text{pointer-events:none;font-family:inherit}
+.controls{display:grid;grid-template-columns:1fr 1.5fr;gap:8px;padding:6px 10px 10px;flex:none}
+.controls button{height:62px;border:0;border-radius:14px;font-size:22px;font-weight:800}
+#undoBtn{background:var(--panel2)}
+#missBtn{background:#3a4352}
+.controls button:active{filter:brightness(1.3);transform:scale(.98)}
+.controls button:disabled{opacity:.35}
+
+/* ---------- Overlays ---------- */
+.overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:rgba(5,8,12,.78);
+  padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px)}
+.flash .fbox{text-align:center;animation:pop .25s ease-out}
+.flash .fsub{font-size:26px;font-weight:700;color:var(--muted)}
+.flash .fmain{font-size:120px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.flash .fnext{font-size:20px;color:var(--muted);margin-top:14px}
+.flash.bust .fmain{color:var(--red);letter-spacing:4px}
+.flash.max .fmain{color:var(--accent)}
+@keyframes pop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+.sheet{width:100%;max-width:520px;max-height:100%;overflow-y:auto;background:var(--panel);border-radius:20px;padding:20px;touch-action:pan-y;animation:pop .25s ease-out}
+.sheet h3{margin:0 0 4px;font-size:30px;text-align:center}
+.sheet .sub{text-align:center;color:var(--muted);font-size:16px;margin-bottom:14px}
+.sheet .trophy{text-align:center;font-size:54px;line-height:1}
+.stats{width:100%;border-collapse:collapse;font-size:15px;margin-bottom:16px;font-variant-numeric:tabular-nums}
+.stats th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;padding:4px 3px;text-align:right}
+.stats td{padding:8px 3px;border-top:1px solid var(--line);text-align:right}
+.stats th:first-child,.stats td:first-child{text-align:left}
+.stats tr.win td{color:var(--accent);font-weight:800}
+.sheet .btns{display:grid;gap:10px}
+.menu .btns .btn{width:100%}
+</style>
+</head>
+<body>
+
+<!-- ================= SETUP ================= -->
+<section id="setup" class="screen">
+  <header class="top"><h1>🎯 Dartzähler</h1></header>
+  <div class="scroll">
+    <button id="resumeBtn" class="btn green big hidden" style="margin-bottom:12px">▶ Spiel fortsetzen</button>
+
+    <div class="card">
+      <h2>Startpunkte</h2>
+      <div class="seg" id="startSeg">
+        <button data-v="301">301</button><button data-v="501">501</button><button data-v="701">701</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <label class="switch-row"><span>Double In<small>Punkte zählen erst nach einem Double</small></span><input type="checkbox" id="optDI"><i></i></label>
+      <label class="switch-row"><span>Double Out<small>Finish nur mit Double oder Bullseye</small></span><input type="checkbox" id="optDO"><i></i></label>
+      <label class="switch-row"><span>Vibration<small>Kurzes Feedback beim Antippen</small></span><input type="checkbox" id="optVib"><i></i></label>
+    </div>
+
+    <div class="card">
+      <h2>Modus</h2>
+      <div class="stepper">
+        <span class="lbl">Legs</span>
+        <div class="ctl"><button class="round" data-step="legs" data-d="-1">−</button><b id="legsVal"></b><button class="round" data-step="legs" data-d="1">+</button></div>
+      </div>
+      <div class="stepper">
+        <span class="lbl">Sets</span>
+        <div class="ctl"><button class="round" data-step="sets" data-d="-1">−</button><b id="setsVal"></b><button class="round" data-step="sets" data-d="1">+</button></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Spieler</h2>
+      <ul id="plist"></ul>
+      <form id="addForm" autocomplete="off">
+        <input id="pname" type="text" placeholder="Name eingeben" maxlength="16" enterkeyhint="done" autocapitalize="words">
+        <button type="submit" aria-label="Spieler hinzufügen">+</button>
+      </form>
+      <div id="recent" class="chips"></div>
+    </div>
+  </div>
+  <footer class="bottom"><button id="startBtn" class="btn primary big">Spiel starten</button></footer>
+</section>
+
+<!-- ================= SPIEL ================= -->
+<section id="game" class="screen hidden">
+  <div class="gtop">
+    <button id="menuBtn" class="icon" aria-label="Menü">☰</button>
+    <div id="matchInfo"></div>
+    <div id="modeInfo"></div>
+  </div>
+  <div id="cards" class="cards"></div>
+  <div class="active">
+    <div class="aleft">
+      <div id="aName"></div>
+      <div id="aScore"></div>
+      <div id="aStats"></div>
+    </div>
+    <div class="aright">
+      <div class="darts"><span class="d" id="d0"></span><span class="d" id="d1"></span><span class="d" id="d2"></span></div>
+      <div id="vSum"></div>
+    </div>
+  </div>
+  <div id="checkout"></div>
+  <div class="boardwrap"><svg id="board" viewBox="-219 -219 438 438" aria-label="Dartscheibe"></svg></div>
+  <div class="controls">
+    <button id="undoBtn">↶ Zurück</button>
+    <button id="missBtn">Daneben (0)</button>
+  </div>
+</section>
+
+<div id="flash" class="overlay flash hidden"></div>
+<div id="win" class="overlay hidden"></div>
+<div id="menu" class="overlay menu hidden">
+  <div class="sheet">
+    <h3>Menü</h3>
+    <div class="sub" id="menuSub"></div>
+    <div class="btns">
+      <button class="btn primary" data-act="close">Weiterspielen</button>
+      <button class="btn" data-act="restartLeg">Leg neu starten</button>
+      <button class="btn" data-act="setup">Zum Startbildschirm (Spiel bleibt gespeichert)</button>
+      <button class="btn danger" data-act="quit">Spiel beenden &amp; verwerfen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ====================================================================
+   Hilfsfunktionen & Speicher
+   ==================================================================== */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clone = o => JSON.parse(JSON.stringify(o));
+const LS = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+const KEY = { settings:'dz.settings', players:'dz.players', recent:'dz.recent', game:'dz.game' };
+const LEG_OPTS = [1,3,5,7,9,11,13,15];
+const SET_OPTS = [1,3,5,7,9];
+const UNDO_MAX = 200;
+
+let settings = Object.assign({ start:501, doubleIn:false, doubleOut:true, vibrate:true, legs:1, sets:1 }, LS.get(KEY.settings, {}));
+let setupPlayers = LS.get(KEY.players, []);
+let recent = LS.get(KEY.recent, []);
+let game = null, undoStack = [];
+{ const g = LS.get(KEY.game, null); if (g && g.state) { game = g.state; undoStack = g.undo || []; } }
+
+const saveSettings = () => LS.set(KEY.settings, settings);
+const savePlayers  = () => LS.set(KEY.players, setupPlayers);
+function saveGame(){
+  if (!game) { LS.del(KEY.game); return; }
+  try { localStorage.setItem(KEY.game, JSON.stringify({ state:game, undo:undoStack })); }
+  catch(e){ // Speicher voll -> Undo-Verlauf kürzen
+    undoStack = undoStack.slice(-30); LS.set(KEY.game, { state:game, undo:undoStack });
+  }
+}
+function vib(ms){ if (settings.vibrate && navigator.vibrate) { try{ navigator.vibrate(ms); }catch(e){} } }
+const firstTo = bo => Math.ceil(bo / 2);
+
+/* ====================================================================
+   Dartscheibe (SVG)
+   ==================================================================== */
+const ORDER = [20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
+// Radien (Ringe leicht verbreitert, damit Triple/Double sicher treffbar sind)
+const R = { bull:12, obull:27, tIn:90, tOut:121, dIn:158, dOut:191, num:205 };
+const COL = { dark:'#1c1c1c', light:'#e9ddc1', red:'#d4382c', green:'#1d8a4b', wire:'#9a9a9a' };
+
+function pol(r, deg){ const a = deg * Math.PI / 180; return [ (r*Math.cos(a)).toFixed(2), (r*Math.sin(a)).toFixed(2) ]; }
+function sector(r1, r2, a1, a2){
+  const [x1,y1] = pol(r2,a1), [x2,y2] = pol(r2,a2), [x3,y3] = pol(r1,a2), [x4,y4] = pol(r1,a1);
+  return `M${x1} ${y1}A${r2} ${r2} 0 0 1 ${x2} ${y2}L${x3} ${y3}A${r1} ${r1} 0 0 0 ${x4} ${y4}Z`;
+}
+function buildBoard(){
+  const svg = $('#board');
+  let h = `<circle r="218" fill="#0f0f0f"/><circle r="${R.dOut+1}" fill="${COL.wire}"/>`;
+  ORDER.forEach((n, i) => {
+    const a1 = -90 + i*18 - 9, a2 = a1 + 18, even = i % 2 === 0;
+    const single = even ? COL.dark : COL.light, ring = even ? COL.red : COL.green;
+    const st = `stroke="${COL.wire}" stroke-width="0.8"`;
+    h += `<path id="s-in-${n}"  d="${sector(R.obull,R.tIn,a1,a2)}" fill="${single}" ${st}/>`;
+    h += `<path id="t-${n}"     d="${sector(R.tIn,R.tOut,a1,a2)}"  fill="${ring}"   ${st}/>`;
+    h += `<path id="s-out-${n}" d="${sector(R.tOut,R.dIn,a1,a2)}"  fill="${single}" ${st}/>`;
+    h += `<path id="d-${n}"     d="${sector(R.dIn,R.dOut,a1,a2)}"  fill="${ring}"   ${st}/>`;
+    const [tx,ty] = pol(R.num, -90 + i*18);
+    h += `<text x="${tx}" y="${ty}" fill="#f2f2f2" font-size="23" font-weight="800" text-anchor="middle" dominant-baseline="central">${n}</text>`;
+  });
+  h += `<circle id="b25" r="${R.obull}" fill="${COL.green}" stroke="${COL.wire}" stroke-width="0.8"/>`;
+  h += `<circle id="b50" r="${R.bull}"  fill="${COL.red}"   stroke="${COL.wire}" stroke-width="0.8"/>`;
+  h += `<g id="marks"></g>`;
+  svg.innerHTML = h;
+
+  svg.addEventListener('pointerdown', onBoardPointer, { passive:false });
+  ['touchstart','touchmove','touchend','gesturestart','dblclick','contextmenu'].forEach(ev =>
+    svg.addEventListener(ev, e => e.preventDefault(), { passive:false }));
+}
+function svgPoint(svg, e){
+  const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+  return p.matrixTransform(svg.getScreenCTM().inverse());
+}
+function hitTest(x, y){
+  const r = Math.hypot(x, y);
+  if (r <= R.bull)  return { v:25, m:2, id:'b50' };
+  if (r <= R.obull) return { v:25, m:1, id:'b25' };
+  if (r >  R.dOut)  return null;               // Zahlenring: ignorieren
+  let ang = Math.atan2(y, x) * 180 / Math.PI + 90; // 0° = oben, im Uhrzeigersinn
+  const idx = ((Math.round(ang / 18) % 20) + 20) % 20;
+  const n = ORDER[idx];
+  if (r <= R.tIn)  return { v:n, m:1, id:'s-in-'+n };
+  if (r <= R.tOut) return { v:n, m:3, id:'t-'+n };
+  if (r <= R.dIn)  return { v:n, m:1, id:'s-out-'+n };
+  return { v:n, m:2, id:'d-'+n };
+}
+function onBoardPointer(e){
+  e.preventDefault();
+  if (!e.isPrimary) return;
+  if (!canThrow()) return;
+  const svg = e.currentTarget, pt = svgPoint(svg, e), hit = hitTest(pt.x, pt.y);
+  if (!hit) return;
+  flashField(hit.id); markPoint(pt.x, pt.y);
+  throwDart(hit.v, hit.m);
+}
+function flashField(id){
+  const el = document.getElementById(id); if (!el) return;
+  const orig = el.getAttribute('fill');
+  if (el.animate) el.animate([{ fill:'#fff36b' }, { fill:'#ffd400', offset:.35 }, { fill:orig }], { duration:450, easing:'ease-out' });
+}
+function markPoint(x, y){
+  const g = $('#marks'), c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', 7);
+  c.setAttribute('fill', '#00e5ff'); c.setAttribute('stroke', '#fff'); c.setAttribute('stroke-width', 2);
+  c.style.pointerEvents = 'none';
+  g.appendChild(c);
+  if (c.animate) c.animate([{ opacity:1, transform:'scale(1)' }, { opacity:0 }], { duration:700 }).onfinish = () => c.remove();
+  else setTimeout(() => c.remove(), 700);
+}
+
+/* ====================================================================
+   Checkout-Rechner
+   ==================================================================== */
+const THROWS = (() => {
+  const a = [];
+  for (let v = 20; v >= 1; v--) a.push({v, m:3, p:v*3}, {v, m:1, p:v}, {v, m:2, p:v*2});
+  a.push({v:25, m:1, p:25}, {v:25, m:2, p:50});
+  return a;
+})();
+const DPREF = {20:0, 16:.1, 18:.3, 12:.4, 10:.45, 8:.5, 14:.7, 6:.8, 4:.9, 2:1};
+const setupCost = t => t.v === 25 ? (t.m === 2 ? 3.5 : 2.5) : t.m === 1 ? 1 : t.m === 3 ? (t.v >= 19 ? 1.9 : 2.1) : 3;
+const finCost = (t, DO) => DO
+  ? (t.v === 25 ? 1.5 : (DPREF[t.v] ?? 1.2))
+  : (t.m === 1 ? (t.v === 25 ? .8 : 0) : t.m === 3 ? .5 : (t.v === 25 ? 1 : .6));
+const coCache = new Map();
+function findCheckout(score, darts, DO){
+  const key = score + '|' + darts + '|' + DO;
+  if (coCache.has(key)) return coCache.get(key);
+  let res = null;
+  if (score > 0 && score <= (DO ? 170 : 180) && !(DO && score < 2)) {
+    const fins = DO ? THROWS.filter(t => t.m === 2) : THROWS;
+    for (let n = 1; n <= darts && !res; n++) {
+      let best = null, bc = Infinity;
+      const consider = arr => {
+        let c = 0, sp = 0;
+        for (let i = 0; i < arr.length - 1; i++) { c += setupCost(arr[i]); sp += arr[i].p; }
+        c += finCost(arr[arr.length - 1], DO) - sp * 0.02;
+        if (c < bc) { bc = c; best = arr; }
+      };
+      for (const f of fins) {
+        const rest = score - f.p; if (rest < 0) continue;
+        if (n === 1) { if (rest === 0) consider([f]); }
+        else if (n === 2) { for (const a of THROWS) if (a.p === rest) consider([a, f]); }
+        else { for (const a of THROWS) for (const b of THROWS) if (a.p >= b.p && a.p + b.p === rest) consider([a, b, f]); }
+      }
+      res = best;
+    }
+  }
+  coCache.set(key, res);
+  return res;
+}
+function label(v, m){
+  if (!m || !v) return '0';
+  if (v === 25) return m === 2 ? 'Bull' : '25';
+  return (m === 3 ? 'T' : m === 2 ? 'D' : '') + v;
+}
+
+/* ====================================================================
+   Spiellogik
+   ==================================================================== */
+function newPlayer(name, s){
+  return { name, score:s.start, opened:!s.doubleIn, legs:0, sets:0,
+    leg:{ darts:0, points:0 },
+    tot:{ darts:0, points:0, visits:0, hi:0, c100:0, c140:0, c180:0, bestCO:0, legsWon:0, busts:0 },
+    last:null };
+}
+function createGame(names, s){
+  return { settings:{ start:s.start, doubleIn:s.doubleIn, doubleOut:s.doubleOut, legs:s.legs, sets:s.sets },
+    players:names.map(n => newPlayer(n, s)),
+    cur:0, legStarter:0, legNo:1, setNo:1, legInSet:1,
+    visit:[], visitStart:s.start, visitOpened:!s.doubleIn,
+    phase:'play', winner:null, setWon:false, lastCO:0, lastCODarts:0 };
+}
+let flashBusy = false, flashTimer = null;
+const canThrow = () => game && game.phase === 'play' && !flashBusy;
+
+function pushUndo(){
+  undoStack.push(clone(game));
+  if (undoStack.length > UNDO_MAX) undoStack.splice(0, undoStack.length - UNDO_MAX);
+}
+function throwDart(v, m){
+  if (!canThrow()) return;
+  vib(15);
+  pushUndo();
+  const g = game, s = g.settings, p = g.players[g.cur];
+  if (g.visit.length === 0) { g.visitStart = p.score; g.visitOpened = p.opened; }
+  const pts = v * m, isDouble = m === 2;
+  let eff = pts;
+  if (s.doubleIn && !p.opened) { if (isDouble) p.opened = true; else eff = 0; }
+  const ns = p.score - eff;
+  const bust = ns < 0 || (s.doubleOut && ns === 1) || (ns === 0 && s.doubleOut && !isDouble);
+  g.visit.push({ l:label(v, m), p:pts, e:eff });
+
+  if (bust) {
+    p.score = g.visitStart; p.opened = g.visitOpened;
+    endVisit(true, false);
+  } else {
+    p.score = ns;
+    if (ns === 0) { endVisit(false, true); legWon(); }
+    else if (g.visit.length === 3) endVisit(false, false);
+  }
+  saveGame(); renderGame();
+}
+function endVisit(bust, checkout){
+  const g = game, p = g.players[g.cur], n = g.visit.length;
+  const total = bust ? 0 : g.visit.reduce((a, d) => a + d.e, 0);
+  p.leg.darts += n; p.leg.points += total;
+  p.tot.darts += n; p.tot.points += total; p.tot.visits++;
+  if (bust) p.tot.busts++;
+  else {
+    p.tot.hi = Math.max(p.tot.hi, total);
+    if (total === 180) p.tot.c180++; else if (total >= 140) p.tot.c140++; else if (total >= 100) p.tot.c100++;
+  }
+  p.last = { d:g.visit.map(d => d.l), t:total, bust };
+  g.visit = [];
+  if (checkout) return;
+  const prevName = p.name;
+  g.cur = (g.cur + 1) % g.players.length;
+  const next = g.players[g.cur].name;
+  if (bust) showFlash('BUST', prevName, 'bust', 1500, next);
+  else showFlash(total === 180 ? '180!' : total, prevName, total === 180 ? 'max' : '', total === 180 ? 1600 : 1000, next);
+}
+function legWon(){
+  const g = game, s = g.settings, p = g.players[g.cur];
+  g.lastCO = g.visitStart; g.lastCODarts = p.leg.darts;
+  p.tot.bestCO = Math.max(p.tot.bestCO, g.visitStart);
+  p.tot.legsWon++; p.legs++;
+  g.winner = g.cur; g.setWon = false;
+  if (p.legs >= firstTo(s.legs)) {
+    p.sets++;
+    if (s.sets > 1) g.setWon = true;
+    if (p.sets >= firstTo(s.sets)) { g.phase = 'matchWon'; vib([60,60,60,60,200]); return; }
+    g.players.forEach(q => q.legs = 0);
+    g.setNo++; g.legInSet = 0;
+  }
+  g.phase = 'legWon'; vib([50,50,150]);
+}
+function startNextLeg(){
+  const g = game, s = g.settings;
+  g.legNo++; g.legInSet++;
+  g.legStarter = (g.legStarter + 1) % g.players.length;
+  g.players.forEach(p => { p.score = s.start; p.opened = !s.doubleIn; p.leg = { darts:0, points:0 }; p.last = null; });
+  g.cur = g.legStarter; g.visit = []; g.phase = 'play'; g.winner = null; g.setWon = false;
+  undoStack = [];
+  saveGame(); renderGame();
+}
+function restartLeg(){
+  // Leg auf Anfang zurücksetzen (Statistik dieses Legs wird zurückgenommen)
+  if (!undoStack.length) return;
+  const legStart = undoStack.findIndex(st => st.legNo === game.legNo);
+  if (legStart < 0) return;
+  game = undoStack[legStart]; undoStack = undoStack.slice(0, legStart);
+  hideFlash(); saveGame(); renderGame();
+}
+function undo(){
+  if (!undoStack.length) return;
+  hideFlash();
+  game = undoStack.pop();
+  vib(30);
+  saveGame(); renderGame();
+}
+
+/* ====================================================================
+   Anzeige Spiel
+   ==================================================================== */
+const avg = (pts, d) => d ? (pts / d * 3).toFixed(1) : '–';
+function renderGame(){
+  if (!game) return;
+  const g = game, s = g.settings, n = g.players.length, cur = g.players[g.cur];
+  // Kopfzeile
+  const legPart = s.legs > 1 ? `Leg ${g.legInSet} · Best of ${s.legs}` : `Leg ${g.legNo}`;
+  $('#matchInfo').textContent = s.sets > 1 ? `Set ${g.setNo} · ${legPart}` : legPart;
+  $('#modeInfo').textContent = `${s.start}${s.doubleIn ? ' · DI' : ''}${s.doubleOut ? ' · DO' : ' · SO'}`;
+
+  // Spielerkarten
+  const showLegs = s.legs > 1 || s.sets > 1;
+  $('#cards').innerHTML = g.players.map((p, i) => {
+    const active = i === g.cur && g.phase === 'play';
+    const darts = p.leg.darts + (i === g.cur ? g.visit.length : 0);
+    const badge = showLegs ? `<span class="lg">${s.sets > 1 ? p.sets + 'S ' : ''}${p.legs}L</span>` : '';
+    const last = p.last ? (p.last.bust ? '<span class="bust">BUST</span>' : p.last.t) + ' · ' + esc(p.last.d.join(' ')) : '–';
+    return `<div class="pc${active ? ' on' : ''}" data-i="${i}">
+      <div class="pn"><span>${esc(p.name)}</span>${badge}</div>
+      <div class="ps">${p.score}</div>
+      <div class="pm">Ø ${avg(p.tot.points, p.tot.darts)} · ${darts} Darts</div>
+      <div class="pl">Letzte: ${last}</div></div>`;
+  }).join('');
+  const on = $('#cards .pc.on');
+  if (on && n > 2) on.scrollIntoView({ inline:'center', block:'nearest', behavior:'smooth' });
+  document.querySelectorAll('#cards .pc').forEach(el => el.style.flexBasis = n <= 3 ? '0' : '30%');
+
+  // Aktiver Spieler
+  $('#aName').textContent = cur.name;
+  $('#aScore').textContent = cur.score;
+  $('#aStats').textContent = `Ø ${avg(cur.leg.points, cur.leg.darts)} (Leg) · ${cur.leg.darts + g.visit.length} Darts`;
+  for (let i = 0; i < 3; i++) {
+    const el = $('#d' + i), d = g.visit[i];
+    el.textContent = d ? d.l : '';
+    el.className = 'd' + (!d && i === g.visit.length ? ' next' : '') + (d && d.p === 0 ? ' zero' : '') + (d && d.p > 0 && d.e === 0 ? ' void' : '');
+  }
+  const sum = g.visit.reduce((a, d) => a + d.e, 0);
+  $('#vSum').innerHTML = `<small>Summe </small>${sum}`;
+
+  // Checkout
+  const co = $('#checkout'); co.className = '';
+  const left = 3 - g.visit.length;
+  if (g.phase !== 'play') co.innerHTML = '';
+  else if (s.doubleIn && !cur.opened) { co.className = 'info'; co.innerHTML = 'Double In – zuerst ein Double treffen'; }
+  else {
+    const route = findCheckout(cur.score, left, s.doubleOut);
+    co.innerHTML = route ? `<small>Checkout</small>${route.map(t => label(t.v, t.m)).join(' · ')}` : '';
+  }
+  $('#undoBtn').disabled = !undoStack.length;
+  renderWin();
+}
+
+function showFlash(main, sub, cls, ms, next){
+  const f = $('#flash');
+  f.className = 'overlay flash ' + cls;
+  f.innerHTML = `<div class="fbox"><div class="fsub">${esc(sub)}</div><div class="fmain">${esc(main)}</div>${next ? `<div class="fnext">Weiter: <b>${esc(next)}</b></div>` : ''}</div>`;
+  flashBusy = true;
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(hideFlash, ms);
+}
+function hideFlash(){
+  clearTimeout(flashTimer); flashBusy = false;
+  $('#flash').classList.add('hidden');
+}
+
+function renderWin(){
+  const w = $('#win');
+  if (!game || game.phase === 'play') { w.classList.add('hidden'); return; }
+  const g = game, s = g.settings, p = g.players[g.winner], match = g.phase === 'matchWon';
+  const title = match ? 'gewinnt das Spiel!' : g.setWon ? 'gewinnt das Set!' : 'gewinnt das Leg!';
+  const multi = s.legs > 1 || s.sets > 1;
+  const rows = g.players.map((q, i) => `<tr class="${i === g.winner ? 'win' : ''}">
+      <td>${esc(q.name)}</td>
+      ${multi ? `<td>${s.sets > 1 ? q.sets + ' / ' : ''}${s.sets > 1 && !match && g.setWon ? q.tot.legsWon : q.legs}</td>` : ''}
+      <td>${avg(q.leg.points, q.leg.darts)}</td>
+      <td>${avg(q.tot.points, q.tot.darts)}</td>
+      <td>${q.leg.darts}</td>
+      <td>${q.tot.hi}</td>
+      <td>${q.tot.c180}</td>
+      <td>${q.tot.bestCO || '–'}</td></tr>`).join('');
+  const head = `<tr><th>Spieler</th>${multi ? `<th>${s.sets > 1 ? 'Sets / ' : ''}${s.sets > 1 && !match && g.setWon ? 'Legs ges.' : 'Legs'}</th>` : ''}<th>Ø Leg</th><th>Ø Spiel</th><th>Darts</th><th>High</th><th>180</th><th>Best CO</th></tr>`;
+  const btns = match
+    ? `<button class="btn primary big" data-act="rematch">Neues Spiel (gleiche Spieler)</button>
+       <button class="btn" data-act="setup">Neues Spiel (Einstellungen)</button>`
+    : `<button class="btn primary big" data-act="nextLeg">Neues Leg</button>
+       <button class="btn" data-act="setup">Neues Spiel</button>`;
+  w.innerHTML = `<div class="sheet">
+      <div class="trophy">${match ? '🏆' : '🎯'}</div>
+      <h3>${esc(p.name)}</h3>
+      <div class="sub">${title}<br>Checkout <b>${g.lastCO}</b> mit ${g.lastCODarts} Darts</div>
+      <table class="stats">${head}${rows}</table>
+      <div class="btns">${btns}
+        <button class="btn" data-act="undo">↶ Letzten Dart zurücknehmen</button>
+      </div></div>`;
+  w.classList.remove('hidden');
+}
+
+/* ====================================================================
+   Setup-Bildschirm
+   ==================================================================== */
+function renderSetup(){
+  document.querySelectorAll('#startSeg button').forEach(b => b.classList.toggle('on', +b.dataset.v === settings.start));
+  $('#optDI').checked = settings.doubleIn;
+  $('#optDO').checked = settings.doubleOut;
+  $('#optVib').checked = settings.vibrate;
+  const L = settings.legs, S = settings.sets;
+  $('#legsVal').innerHTML = L === 1 ? '1 Leg<small>pro Set</small>' : `Best of ${L}<small>First to ${firstTo(L)}</small>`;
+  $('#setsVal').innerHTML = S === 1 ? 'Aus<small>keine Sets</small>' : `Best of ${S}<small>First to ${firstTo(S)}</small>`;
+
+  $('#plist').innerHTML = setupPlayers.length
+    ? setupPlayers.map((n, i) => `<li><span class="num">${i + 1}.</span><span class="nm">${esc(n)}</span>
+        <button data-mv="${i}" data-d="-1" ${i === 0 ? 'disabled style="opacity:.3"' : ''} aria-label="nach oben">▲</button>
+        <button data-mv="${i}" data-d="1" ${i === setupPlayers.length - 1 ? 'disabled style="opacity:.3"' : ''} aria-label="nach unten">▼</button>
+        <button class="del" data-del="${i}" aria-label="löschen">✕</button></li>`).join('')
+    : '<li class="empty">Noch keine Spieler – unten Namen eingeben.</li>';
+
+  const rec = recent.filter(n => !setupPlayers.includes(n));
+  $('#recent').innerHTML = rec.length
+    ? '<div class="hint">Zuletzt verwendet – antippen zum Hinzufügen:</div>' + rec.map(n => `<button class="chip" data-add="${esc(n)}">+ ${esc(n)}</button>`).join('')
+    : '';
+  $('#resumeBtn').classList.toggle('hidden', !game);
+  $('#startBtn').disabled = !setupPlayers.length;
+}
+function addPlayer(name){
+  name = (name || '').trim().slice(0, 16);
+  if (!name) return;
+  if (setupPlayers.some(n => n.toLowerCase() === name.toLowerCase())) { vib(80); return; }
+  setupPlayers.push(name); savePlayers(); renderSetup();
+}
+function startGame(names){
+  names = names || setupPlayers;
+  if (!names.length) return;
+  if (game && game.phase === 'play' && names === setupPlayers && !confirm('Das laufende Spiel wird verworfen. Neues Spiel starten?')) return;
+  recent = [...names, ...recent.filter(n => !names.includes(n))].slice(0, 16);
+  LS.set(KEY.recent, recent);
+  game = createGame(names, settings);
+  undoStack = [];
+  saveGame(); showScreen('game');
+}
+
+/* ====================================================================
+   Navigation / Bildschirm wach halten
+   ==================================================================== */
+let wakeLock = null;
+async function keepAwake(on){
+  try {
+    if (on && 'wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => wakeLock = null); }
+    if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch(e){}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !$('#game').classList.contains('hidden')) keepAwake(true); });
+
+function showScreen(name){
+  $('#setup').classList.toggle('hidden', name !== 'setup');
+  $('#game').classList.toggle('hidden', name !== 'game');
+  $('#menu').classList.add('hidden');
+  hideFlash();
+  if (name === 'game') { renderGame(); keepAwake(true); }
+  else { $('#win').classList.add('hidden'); renderSetup(); keepAwake(false); }
+}
+
+/* ====================================================================
+   Events
+   ==================================================================== */
+$('#startSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; settings.start = +b.dataset.v; saveSettings(); renderSetup(); });
+$('#optDI').addEventListener('change', e => { settings.doubleIn = e.target.checked; saveSettings(); });
+$('#optDO').addEventListener('change', e => { settings.doubleOut = e.target.checked; saveSettings(); });
+$('#optVib').addEventListener('change', e => { settings.vibrate = e.target.checked; saveSettings(); vib(20); });
+document.querySelectorAll('[data-step]').forEach(b => b.addEventListener('click', () => {
+  const k = b.dataset.step, opts = k === 'legs' ? LEG_OPTS : SET_OPTS;
+  const i = Math.max(0, Math.min(opts.length - 1, opts.indexOf(settings[k]) + +b.dataset.d));
+  settings[k] = opts[i]; saveSettings(); renderSetup();
+}));
+$('#plist').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.del != null) { setupPlayers.splice(+b.dataset.del, 1); }
+  else if (b.dataset.mv != null) {
+    const i = +b.dataset.mv, j = i + +b.dataset.d;
+    if (j < 0 || j >= setupPlayers.length) return;
+    [setupPlayers[i], setupPlayers[j]] = [setupPlayers[j], setupPlayers[i]];
+  }
+  savePlayers(); renderSetup();
+});
+$('#addForm').addEventListener('submit', e => { e.preventDefault(); const inp = $('#pname'); addPlayer(inp.value); inp.value = ''; });
+$('#recent').addEventListener('click', e => { const b = e.target.closest('[data-add]'); if (b) addPlayer(b.dataset.add); });
+$('#startBtn').addEventListener('click', () => startGame());
+$('#resumeBtn').addEventListener('click', () => showScreen('game'));
+
+$('#missBtn').addEventListener('click', () => { if (canThrow()) throwDart(0, 0); });
+$('#undoBtn').addEventListener('click', undo);
+$('#flash').addEventListener('pointerdown', e => { e.preventDefault(); hideFlash(); });
+$('#menuBtn').addEventListener('click', () => {
+  $('#menuSub').textContent = game ? game.players.map(p => `${p.name}: ${p.score}`).join(' · ') : '';
+  $('#menu').classList.remove('hidden');
+});
+function handleAction(act){
+  switch (act) {
+    case 'close': $('#menu').classList.add('hidden'); break;
+    case 'undo': undo(); break;
+    case 'nextLeg': startNextLeg(); break;
+    case 'rematch': startGame(game.players.map(p => p.name)); break;
+    case 'setup':
+      if (game && game.phase === 'matchWon') { game = null; undoStack = []; saveGame(); }
+      showScreen('setup'); break;
+    case 'restartLeg':
+      if (confirm('Aktuelles Leg wirklich neu starten?')) { restartLeg(); $('#menu').classList.add('hidden'); } break;
+    case 'quit':
+      if (confirm('Spiel wirklich beenden? Der Spielstand wird gelöscht.')) { game = null; undoStack = []; saveGame(); showScreen('setup'); } break;
+  }
+}
+['#menu', '#win'].forEach(sel => $(sel).addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (b) handleAction(b.dataset.act);
+  else if (sel === '#menu' && e.target.id === 'menu') $('#menu').classList.add('hidden');
+}));
+// iOS: Pinch-Zoom verhindern
+document.addEventListener('gesturestart', e => e.preventDefault(), { passive:false });
+document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive:false });
+
+/* ====================================================================
+   Start
+   ==================================================================== */
+buildBoard();
+showScreen(game ? 'game' : 'setup');
+
+// Optional: Service Worker (nur bei Auslieferung über http/https, nicht bei file://)
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
