@@ -118,10 +118,11 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 #checkout.info{color:var(--blue);font-size:18px}
 .inputArea{flex:1 1 0;min-height:0;position:relative;display:flex;flex-direction:column}
 .boardwrap{flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center;padding:0 2px;position:relative;overflow:hidden}
-.zoomctl{position:absolute;right:8px;bottom:6px;display:flex;flex-direction:column;gap:6px;z-index:2}
-.zoomctl button{width:46px;height:46px;border-radius:12px;border:1px solid var(--line);background:rgba(30,38,49,.88);font-size:24px;font-weight:800;line-height:1}
+.zoomctl{display:flex;gap:6px}
+.zoomctl button{width:40px;font-size:22px;font-weight:800;line-height:1}
 .zoomctl button:active{background:var(--line)}
 .zoomctl button:disabled{opacity:.3}
+@media (max-width:360px){#modeInfo{display:none}}
 .keypad{flex:1 1 0;min-height:0;display:flex;flex-direction:column;gap:6px;padding:4px 10px}
 .kmods,.kbot{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;flex:none}
 .kbot{grid-template-columns:1fr 1fr}
@@ -233,6 +234,11 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
     <button id="menuBtn" class="icon" aria-label="Menü">☰</button>
     <button id="inputBtn" class="icon" aria-label="Eingabeart wechseln"></button>
     <div id="matchInfo"></div>
+    <div class="zoomctl" id="zoomctl">
+      <button id="zoomOut" class="icon" aria-label="Verkleinern">−</button>
+      <button id="zoomIn" class="icon" aria-label="Vergrößern">+</button>
+      <button id="zoomReset" class="icon" aria-label="Zoom zurücksetzen">⤢</button>
+    </div>
     <div id="modeInfo"></div>
   </div>
   <div id="cards" class="cards"></div>
@@ -251,11 +257,6 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
   <div class="inputArea">
     <div class="boardwrap" id="boardwrap">
       <svg id="board" viewBox="-219 -219 438 438" aria-label="Dartscheibe"></svg>
-      <div class="zoomctl">
-        <button id="zoomIn" aria-label="Vergrößern">+</button>
-        <button id="zoomOut" aria-label="Verkleinern">−</button>
-        <button id="zoomReset" aria-label="Zoom zurücksetzen">⤢</button>
-      </div>
     </div>
     <div class="keypad hidden" id="keypad">
       <div class="kmods" id="kmods">
@@ -352,11 +353,11 @@ function buildBoard(){
     h += `<path id="t-${n}"     d="${sector(R.tIn,R.tOut,a1,a2)}"  fill="${ring}"   ${st}/>`;
     h += `<path id="s-out-${n}" d="${sector(R.tOut,R.dIn,a1,a2)}"  fill="${single}" ${st}/>`;
     h += `<path id="d-${n}"     d="${sector(R.dIn,R.dOut,a1,a2)}"  fill="${ring}"   ${st}/>`;
-    const [tx,ty] = pol(R.num, -90 + i*18);
-    h += `<text x="${tx}" y="${ty}" fill="#f2f2f2" font-size="23" font-weight="800" text-anchor="middle" dominant-baseline="central">${n}</text>`;
   });
   h += `<circle id="b25" r="${R.obull}" fill="${COL.green}" stroke="${COL.wire}" stroke-width="0.8"/>`;
   h += `<circle id="b50" r="${R.bull}"  fill="${COL.red}"   stroke="${COL.wire}" stroke-width="0.8"/>`;
+  h += `<g id="nums" pointer-events="none">` + ORDER.map(n =>
+    `<g><circle r="0" fill="rgba(0,0,0,.72)" stroke="rgba(255,255,255,.55)"/><text fill="#fff" font-weight="800" text-anchor="middle" dominant-baseline="central">${n}</text></g>`).join('') + `</g>`;
   h += `<g id="marks"></g>`;
   svg.innerHTML = h;
 
@@ -381,9 +382,40 @@ function applyZoom(){
   const half = VB / 2 / zoom.s, lim = VB / 2 - half;
   zoom.cx = clamp(zoom.cx, -lim, lim); zoom.cy = clamp(zoom.cy, -lim, lim);
   $('#board').setAttribute('viewBox', `${zoom.cx - half} ${zoom.cy - half} ${2 * half} ${2 * half}`);
+  renderNums();
   $('#zoomOut').disabled = zoom.s <= 1.001;
   $('#zoomReset').disabled = zoom.s <= 1.001;
   $('#zoomIn').disabled = zoom.s >= ZMAX - .001;
+}
+/* Zahlen wandern beim Zoomen mit: Jede Zahl sitzt auf der Mittellinie ihres Segments,
+   außen im Zahlenring – oder, wenn der nicht sichtbar ist, am sichtbaren Rand des Ausschnitts. */
+function renderNums(){
+  const svg = $('#board'), g = $('#nums'); if (!g) return;
+  const rc = svg.getBoundingClientRect();
+  if (!rc.width || !rc.height) return;
+  const a = toBoard(rc.left, rc.top), b = toBoard(rc.right, rc.bottom);
+  const s = zoom.s, fs = (s > 1.001 ? 26 : 23) / s;           // gleichbleibende Größe auf dem Bildschirm
+  const pad = fs * 0.95;
+  const x0 = a.x + pad, x1 = b.x - pad, y0 = a.y + pad, y1 = b.y - pad;
+  [...g.children].forEach((el, i) => {
+    const ang = (-90 + i * 18) * Math.PI / 180, ux = Math.cos(ang), uy = Math.sin(ang);
+    let tmin = 0, tmax = Infinity;
+    for (const [u, lo, hi] of [[ux, x0, x1], [uy, y0, y1]]) {
+      if (Math.abs(u) < 1e-9) { if (lo > 0 || hi < 0) tmax = -1; continue; }
+      let t1 = lo / u, t2 = hi / u; if (t1 > t2) [t1, t2] = [t2, t1];
+      tmin = Math.max(tmin, t1); tmax = Math.min(tmax, t2);
+    }
+    const full = s <= 1.001;                                   // ungezoomt: klassischer Zahlenring
+    const r = full ? R.num : Math.min(R.num, tmax);
+    const vis = full || (tmax >= tmin && r >= tmin && r >= R.obull + fs * 0.8);
+    el.style.display = vis ? '' : 'none';
+    if (!vis) return;
+    const x = r * ux, y = r * uy, inside = r < R.dOut + fs * 0.5;
+    const c = el.firstChild, t = el.lastChild;
+    c.setAttribute('cx', x); c.setAttribute('cy', y);
+    c.setAttribute('r', inside ? fs * 0.85 : 0); c.setAttribute('stroke-width', 1.5 / s);
+    t.setAttribute('x', x); t.setAttribute('y', y); t.setAttribute('font-size', fs);
+  });
 }
 function boardMetrics(){
   const r = $('#board').getBoundingClientRect();
@@ -819,7 +851,7 @@ function showScreen(name){
   $('#game').classList.toggle('hidden', name !== 'game');
   $('#menu').classList.add('hidden');
   hideFlash();
-  if (name === 'game') { renderGame(); keepAwake(true); }
+  if (name === 'game') { renderGame(); applyZoom(); keepAwake(true); }
   else { $('#win').classList.add('hidden'); renderSetup(); keepAwake(false); }
 }
 
@@ -859,7 +891,7 @@ $('#zoomIn').addEventListener('click', () => zoomCenter(1.4));
 $('#zoomOut').addEventListener('click', () => zoomCenter(1 / 1.4));
 $('#zoomReset').addEventListener('click', resetZoom);
 $('#optNum').addEventListener('change', e => { settings.numpad = e.target.checked; saveSettings(); });
-$('#inputBtn').addEventListener('click', () => { settings.numpad = !settings.numpad; saveSettings(); renderInputMode(); vib(15); });
+$('#inputBtn').addEventListener('click', () => { settings.numpad = !settings.numpad; saveSettings(); renderInputMode(); applyZoom(); vib(15); });
 
 /* ---------- Zifferneingabe ---------- */
 let kMod = 1;
@@ -875,6 +907,7 @@ function setMod(m){
 function renderInputMode(){
   $('#boardwrap').classList.toggle('hidden', settings.numpad);
   $('#keypad').classList.toggle('hidden', !settings.numpad);
+  $('#zoomctl').classList.toggle('hidden', settings.numpad);
   $('#inputBtn').textContent = settings.numpad ? '🎯' : '🔢';
 }
 $('#keypad').addEventListener('click', e => {
@@ -924,6 +957,7 @@ document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preven
 buildBoard();
 buildKeypad();
 applyZoom();
+window.addEventListener('resize', applyZoom);
 showScreen(game ? 'game' : 'setup');
 
 // Optional: Service Worker (nur bei Auslieferung über http/https, nicht bei file://)

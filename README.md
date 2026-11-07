@@ -4,7 +4,7 @@ Ein X01-Dartzähler (301 / 501 / 701) als **eine einzelne HTML-Datei** – ohne 
 
 ## Funktionen
 - Eingabe über eine antippbare SVG-Dartscheibe (Single innen und außen, Double, Triple, 25, Bull) und einen Button „Daneben“
-- Scheibe zoombar: mit zwei Fingern zoomen, mit einem Finger verschieben, oder über die Buttons + / − / ⤢
+- Scheibe zoombar: mit zwei Fingern zoomen, mit einem Finger verschieben, oder über die Buttons − / + / ⤢ oben; die Zahlen wandern beim Zoomen mit und bleiben immer am Rand sichtbar
 - Alternativ Zifferneingabe (Schalter im Startbildschirm oder 🔢/🎯-Button im Spiel): Single/Double/Triple wählen, dann Zahl 1–20, 25 oder Bull
 - Nach drei Darts (oder Bust) wird die Aufnahme angezeigt; erst mit „Weiter“ ist der nächste Spieler dran
 - Double In / Double Out, Bust-Regel, Legs und Sets (Best of …)
