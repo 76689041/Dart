@@ -116,7 +116,38 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 #checkout{height:36px;flex:none;display:flex;align-items:center;justify-content:center;gap:8px;font-size:23px;font-weight:800;color:var(--green);letter-spacing:.3px}
 #checkout small{font-size:13px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px}
 #checkout.info{color:var(--blue);font-size:18px}
-.boardwrap{flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center;padding:0 2px}
+.inputArea{flex:1 1 0;min-height:0;position:relative;display:flex;flex-direction:column}
+.boardwrap{flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center;padding:0 2px;position:relative;overflow:hidden}
+.zoomctl{position:absolute;right:8px;bottom:6px;display:flex;flex-direction:column;gap:6px;z-index:2}
+.zoomctl button{width:46px;height:46px;border-radius:12px;border:1px solid var(--line);background:rgba(30,38,49,.88);font-size:24px;font-weight:800;line-height:1}
+.zoomctl button:active{background:var(--line)}
+.zoomctl button:disabled{opacity:.3}
+.keypad{flex:1 1 0;min-height:0;display:flex;flex-direction:column;gap:6px;padding:4px 10px}
+.kmods,.kbot{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;flex:none}
+.kbot{grid-template-columns:1fr 1fr}
+.knums{flex:1;min-height:0;display:grid;grid-template-columns:repeat(5,1fr);grid-auto-rows:1fr;gap:6px}
+.keypad button{border:0;border-radius:12px;background:var(--panel2);font-size:clamp(22px,7vw,32px);font-weight:800;min-height:44px}
+.kmods button,.kbot button{height:54px;font-size:20px}
+.keypad button:active{filter:brightness(1.4);transform:scale(.96)}
+.kmods .sgl.on{background:var(--accent);color:#1a1400}
+.kmods .dbl.on{background:var(--red);color:#fff}
+.kmods .tpl.on{background:var(--green);color:#04130a}
+.keypad.m2 .knums button{box-shadow:inset 0 0 0 3px var(--red)}
+.keypad.m3 .knums button{box-shadow:inset 0 0 0 3px var(--green)}
+.keypad.m3 [data-k="25"],.keypad.m3 [data-k="50"]{opacity:.35}
+.confirm{position:absolute;inset:0;z-index:5;background:rgba(8,11,16,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;text-align:center;animation:pop .2s ease-out}
+.confirm .cname{font-size:24px;font-weight:700;color:var(--muted)}
+.confirm .cdarts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.confirm .cdarts span{min-width:88px;padding:12px 10px;border-radius:14px;background:var(--panel2);font-size:36px;font-weight:900}
+.confirm .ctotal{font-size:96px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.confirm.max .ctotal{color:var(--accent)}
+.confirm.bust .ctotal{color:var(--red);letter-spacing:4px}
+.confirm .crest{font-size:22px;color:var(--muted)}
+.confirm .crest b{color:var(--text)}
+.confirm .cgo{width:100%;max-width:440px;height:76px;border:0;border-radius:18px;background:var(--green);color:#04130a;font-size:26px;font-weight:900}
+.confirm .cgo:active{filter:brightness(1.2);transform:scale(.98)}
+.confirm .chint{font-size:14px;color:var(--muted)}
+#missBtn.go{background:var(--green);color:#04130a}
 #board{width:100%;height:100%;display:block;touch-action:none;-webkit-user-select:none;user-select:none}
 #board text{pointer-events:none;font-family:inherit}
 .controls{display:grid;grid-template-columns:1fr 1.5fr;gap:8px;padding:6px 10px 10px;flex:none}
@@ -167,6 +198,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
     <div class="card">
       <label class="switch-row"><span>Double In<small>Punkte zählen erst nach einem Double</small></span><input type="checkbox" id="optDI"><i></i></label>
       <label class="switch-row"><span>Double Out<small>Finish nur mit Double oder Bullseye</small></span><input type="checkbox" id="optDO"><i></i></label>
+      <label class="switch-row"><span>Zifferneingabe<small>Zahlen-Tastatur statt Dartscheibe (im Spiel umschaltbar)</small></span><input type="checkbox" id="optNum"><i></i></label>
       <label class="switch-row"><span>Vibration<small>Kurzes Feedback beim Antippen</small></span><input type="checkbox" id="optVib"><i></i></label>
     </div>
 
@@ -199,6 +231,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 <section id="game" class="screen hidden">
   <div class="gtop">
     <button id="menuBtn" class="icon" aria-label="Menü">☰</button>
+    <button id="inputBtn" class="icon" aria-label="Eingabeart wechseln"></button>
     <div id="matchInfo"></div>
     <div id="modeInfo"></div>
   </div>
@@ -215,7 +248,29 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
     </div>
   </div>
   <div id="checkout"></div>
-  <div class="boardwrap"><svg id="board" viewBox="-219 -219 438 438" aria-label="Dartscheibe"></svg></div>
+  <div class="inputArea">
+    <div class="boardwrap" id="boardwrap">
+      <svg id="board" viewBox="-219 -219 438 438" aria-label="Dartscheibe"></svg>
+      <div class="zoomctl">
+        <button id="zoomIn" aria-label="Vergrößern">+</button>
+        <button id="zoomOut" aria-label="Verkleinern">−</button>
+        <button id="zoomReset" aria-label="Zoom zurücksetzen">⤢</button>
+      </div>
+    </div>
+    <div class="keypad hidden" id="keypad">
+      <div class="kmods" id="kmods">
+        <button data-mod="1" class="sgl on">Single</button>
+        <button data-mod="2" class="dbl">Double</button>
+        <button data-mod="3" class="tpl">Triple</button>
+      </div>
+      <div class="knums" id="knums"></div>
+      <div class="kbot">
+        <button data-k="25">25</button>
+        <button data-k="50">Bull (50)</button>
+      </div>
+    </div>
+    <div class="confirm hidden" id="confirm"></div>
+  </div>
   <div class="controls">
     <button id="undoBtn">↶ Zurück</button>
     <button id="missBtn">Daneben (0)</button>
@@ -255,7 +310,7 @@ const LEG_OPTS = [1,3,5,7,9,11,13,15];
 const SET_OPTS = [1,3,5,7,9];
 const UNDO_MAX = 200;
 
-let settings = Object.assign({ start:501, doubleIn:false, doubleOut:true, vibrate:true, legs:1, sets:1 }, LS.get(KEY.settings, {}));
+let settings = Object.assign({ start:501, doubleIn:false, doubleOut:true, vibrate:true, numpad:false, legs:1, sets:1 }, LS.get(KEY.settings, {}));
 let setupPlayers = LS.get(KEY.players, []);
 let recent = LS.get(KEY.recent, []);
 let game = null, undoStack = [];
@@ -305,9 +360,97 @@ function buildBoard(){
   h += `<g id="marks"></g>`;
   svg.innerHTML = h;
 
-  svg.addEventListener('pointerdown', onBoardPointer, { passive:false });
+  svg.addEventListener('pointerdown', onPtrDown, { passive:false });
+  svg.addEventListener('pointermove', onPtrMove, { passive:false });
+  svg.addEventListener('pointerup', onPtrUp, { passive:false });
+  svg.addEventListener('pointercancel', onPtrCancel);
+  svg.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1.15 : 1/1.15); }, { passive:false });
   ['touchstart','touchmove','touchend','gesturestart','dblclick','contextmenu'].forEach(ev =>
     svg.addEventListener(ev, e => e.preventDefault(), { passive:false }));
+}
+
+/* ---------- Zoom & Gesten ----------
+   1 Finger tippen  = Dart werfen
+   2 Finger         = Zoomen (Pinch) und Verschieben
+   1 Finger ziehen  = Verschieben (nur wenn gezoomt)              */
+const VB = 438, ZMAX = 4;
+const zoom = { s:1, cx:0, cy:0 };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function applyZoom(){
+  zoom.s = clamp(zoom.s, 1, ZMAX);
+  const half = VB / 2 / zoom.s, lim = VB / 2 - half;
+  zoom.cx = clamp(zoom.cx, -lim, lim); zoom.cy = clamp(zoom.cy, -lim, lim);
+  $('#board').setAttribute('viewBox', `${zoom.cx - half} ${zoom.cy - half} ${2 * half} ${2 * half}`);
+  $('#zoomOut').disabled = zoom.s <= 1.001;
+  $('#zoomReset').disabled = zoom.s <= 1.001;
+  $('#zoomIn').disabled = zoom.s >= ZMAX - .001;
+}
+function boardMetrics(){
+  const r = $('#board').getBoundingClientRect();
+  return { mx:r.left + r.width / 2, my:r.top + r.height / 2, k:Math.min(r.width, r.height) * zoom.s / VB };
+}
+function toBoard(x, y){
+  const svg = $('#board'), p = svg.createSVGPoint(); p.x = x; p.y = y;
+  return p.matrixTransform(svg.getScreenCTM().inverse());
+}
+// Zoomt so, dass der Punkt unter (x,y) an derselben Bildschirmstelle bleibt
+function zoomTo(s, anchorBoard, x, y){
+  zoom.s = clamp(s, 1, ZMAX);
+  const m = boardMetrics();
+  zoom.cx = anchorBoard.x - (x - m.mx) / m.k;
+  zoom.cy = anchorBoard.y - (y - m.my) / m.k;
+  applyZoom();
+}
+function zoomAt(x, y, f){ zoomTo(zoom.s * f, toBoard(x, y), x, y); }
+function zoomCenter(f){ const m = boardMetrics(); zoomAt(m.mx, m.my, f); }
+function resetZoom(){ zoom.s = 1; zoom.cx = 0; zoom.cy = 0; applyZoom(); }
+
+const ptrs = new Map();
+let gest = null;
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const midOf = (a, b) => ({ x:(a.x + b.x) / 2, y:(a.y + b.y) / 2 });
+function onPtrDown(e){
+  e.preventDefault();
+  try { e.currentTarget.setPointerCapture(e.pointerId); } catch(_){}
+  ptrs.set(e.pointerId, { x:e.clientX, y:e.clientY });
+  if (ptrs.size === 1) {
+    gest = { type:'tap', id:e.pointerId, x0:e.clientX, y0:e.clientY, cx0:zoom.cx, cy0:zoom.cy };
+  } else if (ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()], m = midOf(a, b);
+    gest = { type:'pinch', d0:Math.max(dist(a, b), 1), s0:zoom.s, p0:toBoard(m.x, m.y) };
+  }
+}
+function onPtrMove(e){
+  if (!ptrs.has(e.pointerId) || !gest) return;
+  e.preventDefault();
+  ptrs.set(e.pointerId, { x:e.clientX, y:e.clientY });
+  if (gest.type === 'pinch' && ptrs.size >= 2) {
+    const [a, b] = [...ptrs.values()], m = midOf(a, b);
+    zoomTo(gest.s0 * dist(a, b) / gest.d0, gest.p0, m.x, m.y);
+  } else if ((gest.type === 'tap' || gest.type === 'pan') && e.pointerId === gest.id) {
+    const dx = e.clientX - gest.x0, dy = e.clientY - gest.y0;
+    if (gest.type === 'tap' && zoom.s > 1.001 && Math.hypot(dx, dy) > 12) gest.type = 'pan';
+    if (gest.type === 'pan') {
+      const k = boardMetrics().k;
+      zoom.cx = gest.cx0 - dx / k; zoom.cy = gest.cy0 - dy / k; applyZoom();
+    }
+  }
+}
+function onPtrUp(e){
+  if (!ptrs.has(e.pointerId)) return;
+  e.preventDefault();
+  ptrs.delete(e.pointerId);
+  if (gest && gest.type === 'tap' && e.pointerId === gest.id && ptrs.size === 0) boardTap(gest.x0, gest.y0);
+  if (ptrs.size === 0) gest = null;
+  else if (gest && gest.type === 'pinch') gest = { type:'done' };   // restlichen Finger ignorieren
+}
+function onPtrCancel(e){ ptrs.delete(e.pointerId); if (!ptrs.size) gest = null; }
+function boardTap(x, y){
+  if (!canThrow()) return;
+  const pt = toBoard(x, y), hit = hitTest(pt.x, pt.y);
+  if (!hit) return;
+  flashField(hit.id); markPoint(pt.x, pt.y);
+  throwDart(hit.v, hit.m);
 }
 function svgPoint(svg, e){
   const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
@@ -326,15 +469,6 @@ function hitTest(x, y){
   if (r <= R.dIn)  return { v:n, m:1, id:'s-out-'+n };
   return { v:n, m:2, id:'d-'+n };
 }
-function onBoardPointer(e){
-  e.preventDefault();
-  if (!e.isPrimary) return;
-  if (!canThrow()) return;
-  const svg = e.currentTarget, pt = svgPoint(svg, e), hit = hitTest(pt.x, pt.y);
-  if (!hit) return;
-  flashField(hit.id); markPoint(pt.x, pt.y);
-  throwDart(hit.v, hit.m);
-}
 function flashField(id){
   const el = document.getElementById(id); if (!el) return;
   const orig = el.getAttribute('fill');
@@ -342,8 +476,8 @@ function flashField(id){
 }
 function markPoint(x, y){
   const g = $('#marks'), c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-  c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', 7);
-  c.setAttribute('fill', '#00e5ff'); c.setAttribute('stroke', '#fff'); c.setAttribute('stroke-width', 2);
+  c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', 7 / zoom.s);
+  c.setAttribute('fill', '#00e5ff'); c.setAttribute('stroke', '#fff'); c.setAttribute('stroke-width', 2 / zoom.s);
   c.style.pointerEvents = 'none';
   g.appendChild(c);
   if (c.animate) c.animate([{ opacity:1, transform:'scale(1)' }, { opacity:0 }], { duration:700 }).onfinish = () => c.remove();
@@ -411,10 +545,10 @@ function createGame(names, s){
     players:names.map(n => newPlayer(n, s)),
     cur:0, legStarter:0, legNo:1, setNo:1, legInSet:1,
     visit:[], visitStart:s.start, visitOpened:!s.doubleIn,
-    phase:'play', winner:null, setWon:false, lastCO:0, lastCODarts:0 };
+    phase:'play', pending:null, winner:null, setWon:false, lastCO:0, lastCODarts:0 };
 }
 let flashBusy = false, flashTimer = null;
-const canThrow = () => game && game.phase === 'play' && !flashBusy;
+const canThrow = () => game && game.phase === 'play' && !game.pending && !flashBusy;
 
 function pushUndo(){
   undoStack.push(clone(game));
@@ -435,12 +569,21 @@ function throwDart(v, m){
 
   if (bust) {
     p.score = g.visitStart; p.opened = g.visitOpened;
-    endVisit(true, false);
+    g.pending = { bust:true };            // warten auf Bestätigung
+    vib([40,40,120]);
   } else {
     p.score = ns;
     if (ns === 0) { endVisit(false, true); legWon(); }
-    else if (g.visit.length === 3) endVisit(false, false);
+    else if (g.visit.length === 3) g.pending = { bust:false };  // warten auf Bestätigung
   }
+  saveGame(); renderGame();
+}
+function confirmVisit(){
+  if (!game || !game.pending || game.phase !== 'play') return;
+  const bust = game.pending.bust;
+  game.pending = null;
+  endVisit(bust, false);
+  vib(20);
   saveGame(); renderGame();
 }
 function endVisit(bust, checkout){
@@ -456,11 +599,7 @@ function endVisit(bust, checkout){
   p.last = { d:g.visit.map(d => d.l), t:total, bust };
   g.visit = [];
   if (checkout) return;
-  const prevName = p.name;
   g.cur = (g.cur + 1) % g.players.length;
-  const next = g.players[g.cur].name;
-  if (bust) showFlash('BUST', prevName, 'bust', 1500, next);
-  else showFlash(total === 180 ? '180!' : total, prevName, total === 180 ? 'max' : '', total === 180 ? 1600 : 1000, next);
 }
 function legWon(){
   const g = game, s = g.settings, p = g.players[g.cur];
@@ -482,7 +621,7 @@ function startNextLeg(){
   g.legNo++; g.legInSet++;
   g.legStarter = (g.legStarter + 1) % g.players.length;
   g.players.forEach(p => { p.score = s.start; p.opened = !s.doubleIn; p.leg = { darts:0, points:0 }; p.last = null; });
-  g.cur = g.legStarter; g.visit = []; g.phase = 'play'; g.winner = null; g.setWon = false;
+  g.cur = g.legStarter; g.visit = []; g.phase = 'play'; g.pending = null; g.winner = null; g.setWon = false;
   undoStack = [];
   saveGame(); renderGame();
 }
@@ -553,6 +692,24 @@ function renderGame(){
     co.innerHTML = route ? `<small>Checkout</small>${route.map(t => label(t.v, t.m)).join(' · ')}` : '';
   }
   $('#undoBtn').disabled = !undoStack.length;
+
+  // Aufnahme beendet -> auf Bestätigung warten
+  const cf = $('#confirm'), mb = $('#missBtn');
+  if (g.pending && g.phase === 'play') {
+    const bust = g.pending.bust, next = g.players[(g.cur + 1) % n].name;
+    cf.className = 'confirm' + (bust ? ' bust' : sum === 180 ? ' max' : '');
+    cf.innerHTML = `<div class="cname">${esc(cur.name)}</div>
+      <div class="cdarts">${g.visit.map(d => `<span>${esc(d.l)}</span>`).join('')}</div>
+      <div class="ctotal">${bust ? 'BUST' : sum}</div>
+      <div class="crest">Rest: <b>${cur.score}</b></div>
+      <button class="cgo" data-act="confirm">Weiter ▶ ${esc(next)}</button>
+      <div class="chint">Falsch eingegeben? „↶ Zurück“ nimmt den letzten Dart zurück.</div>`;
+    mb.textContent = 'Weiter ▶'; mb.classList.add('go');
+  } else {
+    cf.className = 'confirm hidden'; cf.innerHTML = '';
+    mb.textContent = 'Daneben (0)'; mb.classList.remove('go');
+  }
+  renderInputMode();
   renderWin();
 }
 
@@ -609,6 +766,7 @@ function renderSetup(){
   $('#optDI').checked = settings.doubleIn;
   $('#optDO').checked = settings.doubleOut;
   $('#optVib').checked = settings.vibrate;
+  $('#optNum').checked = settings.numpad;
   const L = settings.legs, S = settings.sets;
   $('#legsVal').innerHTML = L === 1 ? '1 Leg<small>pro Set</small>' : `Best of ${L}<small>First to ${firstTo(L)}</small>`;
   $('#setsVal').innerHTML = S === 1 ? 'Aus<small>keine Sets</small>' : `Best of ${S}<small>First to ${firstTo(S)}</small>`;
@@ -692,7 +850,43 @@ $('#recent').addEventListener('click', e => { const b = e.target.closest('[data-
 $('#startBtn').addEventListener('click', () => startGame());
 $('#resumeBtn').addEventListener('click', () => showScreen('game'));
 
-$('#missBtn').addEventListener('click', () => { if (canThrow()) throwDart(0, 0); });
+$('#missBtn').addEventListener('click', () => {
+  if (game && game.pending) confirmVisit();
+  else if (canThrow()) throwDart(0, 0);
+});
+$('#confirm').addEventListener('click', e => { if (e.target.closest('[data-act="confirm"]')) confirmVisit(); });
+$('#zoomIn').addEventListener('click', () => zoomCenter(1.4));
+$('#zoomOut').addEventListener('click', () => zoomCenter(1 / 1.4));
+$('#zoomReset').addEventListener('click', resetZoom);
+$('#optNum').addEventListener('change', e => { settings.numpad = e.target.checked; saveSettings(); });
+$('#inputBtn').addEventListener('click', () => { settings.numpad = !settings.numpad; saveSettings(); renderInputMode(); vib(15); });
+
+/* ---------- Zifferneingabe ---------- */
+let kMod = 1;
+function buildKeypad(){
+  $('#knums').innerHTML = Array.from({ length:20 }, (_, i) => `<button data-k="${i + 1}">${i + 1}</button>`).join('');
+}
+function setMod(m){
+  kMod = m;
+  document.querySelectorAll('#kmods button').forEach(b => b.classList.toggle('on', +b.dataset.mod === m));
+  $('#keypad').classList.toggle('m2', m === 2);
+  $('#keypad').classList.toggle('m3', m === 3);
+}
+function renderInputMode(){
+  $('#boardwrap').classList.toggle('hidden', settings.numpad);
+  $('#keypad').classList.toggle('hidden', !settings.numpad);
+  $('#inputBtn').textContent = settings.numpad ? '🎯' : '🔢';
+}
+$('#keypad').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.mod) { const m = +b.dataset.mod; setMod(kMod === m ? 1 : m); vib(8); return; }
+  if (!canThrow()) return;
+  const k = +b.dataset.k;
+  if (k === 50) throwDart(25, 2);
+  else if (k === 25) { if (kMod === 3) { vib(80); return; } throwDart(25, kMod === 2 ? 2 : 1); }
+  else throwDart(k, kMod);
+  setMod(1);
+});
 $('#undoBtn').addEventListener('click', undo);
 $('#flash').addEventListener('pointerdown', e => { e.preventDefault(); hideFlash(); });
 $('#menuBtn').addEventListener('click', () => {
@@ -703,6 +897,7 @@ function handleAction(act){
   switch (act) {
     case 'close': $('#menu').classList.add('hidden'); break;
     case 'undo': undo(); break;
+    case 'confirm': confirmVisit(); break;
     case 'nextLeg': startNextLeg(); break;
     case 'rematch': startGame(game.players.map(p => p.name)); break;
     case 'setup':
@@ -727,6 +922,8 @@ document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preven
    Start
    ==================================================================== */
 buildBoard();
+buildKeypad();
+applyZoom();
 showScreen(game ? 'game' : 'setup');
 
 // Optional: Service Worker (nur bei Auslieferung über http/https, nicht bei file://)

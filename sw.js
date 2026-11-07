@@ -1,5 +1,5 @@
 // Service Worker: macht den Dartzähler offline verfügbar (nur bei http/https).
-const CACHE = 'dartzaehler-v1';
+const CACHE = 'dartzaehler-v2';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
