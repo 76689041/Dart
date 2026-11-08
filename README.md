@@ -10,7 +10,7 @@ Ein X01-Dartzähler (301 / 501 / 701) als **eine einzelne HTML-Datei** – ohne 
 - Double In / Double Out, Bust-Regel, Legs und Sets (Best of …)
 - Checkout-Vorschläge (≤ 170 bei Double Out)
 - Rückgängig-Funktion für jeden Dart, auch über Spielerwechsel hinweg
-- Statistik: 3-Dart-Durchschnitt, Darts, letzte Aufnahme, Höchstwert, 180er, bestes Checkout
+- Statistik-Seite (📊) für das aktuelle Spiel und gesamt über alle Spiele: 3-Dart-Ø, First-9-Ø, Checkout-Quote, höchstes Finish, Legs gewonnen, bestes Leg, 180/140+/100+/60+, Verteilung der Aufnahmen, Busts, Lieblings-Finish-Felder, Trefferbild als Heatmap, Ø pro Leg im Verlauf und ein Spielervergleich
 - Der Spielstand wird automatisch gespeichert (localStorage), die Spieler werden gemerkt
 
 ## Öffnen auf dem Handy

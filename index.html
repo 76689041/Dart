@@ -158,6 +158,56 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 .controls button:active{filter:brightness(1.3);transform:scale(.98)}
 .controls button:disabled{opacity:.35}
 
+/* ---------- Statistik ---------- */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.statbtn{padding:10px 14px;font-size:16px}
+.sttitle{flex:1;font-size:22px;font-weight:800}
+.st-seg{margin-bottom:10px}
+.st-seg button{font-size:17px;padding:11px 0}
+.st-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none;touch-action:pan-x}
+.st-chips::-webkit-scrollbar{display:none}
+.st-chips .chip{flex:none;font-weight:700}
+.st-chips .chip.on{background:var(--accent);color:#1a1400;border-color:var(--accent)}
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+@media (min-width:520px){.tiles{grid-template-columns:repeat(3,1fr)}}
+.tile{background:var(--panel);border-radius:14px;padding:10px 12px}
+.tile .tl{font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:700}
+.tile .tv{font-size:30px;font-weight:900;line-height:1.15;font-variant-numeric:tabular-nums}
+.tile .ts{font-size:12px;color:var(--muted)}
+.tile.hero{grid-column:1/-1;display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.tile.hero .tv{font-size:56px;color:var(--accent);line-height:1}
+.kv{display:grid;grid-template-columns:1fr auto;gap:0;font-size:16px}
+.kv div{padding:8px 0;border-top:1px solid var(--line)}
+.kv div:nth-child(-n+2){border-top:0}
+.kv div:nth-child(even){text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+.bars{display:grid;grid-template-columns:auto 1fr auto;gap:8px 10px;align-items:center;font-size:14px}
+.bars .bl{color:var(--muted);font-weight:700;white-space:nowrap}
+.bars .bt{height:14px;background:var(--panel2);border-radius:0 4px 4px 0;overflow:hidden}
+.bars .bf{height:100%;background:var(--accent);border-radius:0 4px 4px 0;min-width:2px}
+.bars .bf.bad{background:#8c98a5}
+.bars .bn{font-weight:800;font-variant-numeric:tabular-nums;text-align:right;min-width:52px}
+.bars .bn small{color:var(--muted);font-weight:600}
+.trend{display:flex;align-items:flex-end;gap:2px;height:120px;border-bottom:1px solid var(--line);padding-top:6px}
+.trend button{flex:1;max-width:32px;border:0;padding:0;background:transparent;height:100%;display:flex;align-items:flex-end;min-width:6px}
+.trend button span{display:block;width:100%;background:var(--accent);border-radius:4px 4px 0 0;opacity:.85}
+.trend button.won span{opacity:1}
+.trend button.lost span{background:#6b7682}
+.trend button.sel span{outline:2px solid var(--text);outline-offset:1px}
+.trendcap,.heatcap{font-size:14px;color:var(--muted);margin-top:8px;min-height:20px;text-align:center}
+.trendcap b,.heatcap b{color:var(--text)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:6px;justify-content:center}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+#heat{width:100%;max-width:360px;display:block;margin:0 auto;touch-action:manipulation}
+.heatscale{display:flex;align-items:center;gap:8px;justify-content:center;font-size:12px;color:var(--muted);margin-top:6px}
+.heatscale span.g{width:120px;height:10px;border-radius:5px}
+.outs{display:flex;flex-wrap:wrap;gap:6px}
+.outs span{background:var(--panel2);border-radius:10px;padding:6px 10px;font-weight:800}
+.outs span small{color:var(--muted);font-weight:600;margin-left:4px}
+.empty-st{color:var(--muted);text-align:center;padding:40px 10px;font-size:17px}
+.cmp{overflow-x:auto}
+.cmp .stats{margin-bottom:0}
+.cmp tr{cursor:pointer}
+
 /* ---------- Overlays ---------- */
 .overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:rgba(5,8,12,.78);
   padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px)}
@@ -185,7 +235,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 
 <!-- ================= SETUP ================= -->
 <section id="setup" class="screen">
-  <header class="top"><h1>🎯 Dartzähler</h1></header>
+  <header class="top topbar"><h1>🎯 Dartzähler</h1><button id="setupStats" class="btn statbtn">📊 Statistik</button></header>
   <div class="scroll">
     <button id="resumeBtn" class="btn green big hidden" style="margin-bottom:12px">▶ Spiel fortsetzen</button>
 
@@ -278,6 +328,15 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
   </div>
 </section>
 
+<!-- ================= STATISTIK ================= -->
+<section id="stats" class="screen hidden">
+  <div class="gtop">
+    <button id="statsBack" class="icon" aria-label="Zurück">←</button>
+    <div class="sttitle">Statistik</div>
+  </div>
+  <div class="scroll" id="statsBody"></div>
+</section>
+
 <div id="flash" class="overlay flash hidden"></div>
 <div id="win" class="overlay hidden"></div>
 <div id="menu" class="overlay menu hidden">
@@ -286,6 +345,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
     <div class="sub" id="menuSub"></div>
     <div class="btns">
       <button class="btn primary" data-act="close">Weiterspielen</button>
+      <button class="btn" data-act="stats">📊 Statistik</button>
       <button class="btn" data-act="restartLeg">Leg neu starten</button>
       <button class="btn" data-act="setup">Zum Startbildschirm (Spiel bleibt gespeichert)</button>
       <button class="btn danger" data-act="quit">Spiel beenden &amp; verwerfen</button>
@@ -306,7 +366,7 @@ const LS = {
   set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
   del(k){ try{ localStorage.removeItem(k); }catch(e){} }
 };
-const KEY = { settings:'dz.settings', players:'dz.players', recent:'dz.recent', game:'dz.game' };
+const KEY = { settings:'dz.settings', players:'dz.players', recent:'dz.recent', game:'dz.game', history:'dz.history' };
 const LEG_OPTS = [1,3,5,7,9,11,13,15];
 const SET_OPTS = [1,3,5,7,9];
 const UNDO_MAX = 200;
@@ -315,7 +375,20 @@ let settings = Object.assign({ start:501, doubleIn:false, doubleOut:true, vibrat
 let setupPlayers = LS.get(KEY.players, []);
 let recent = LS.get(KEY.recent, []);
 let game = null, undoStack = [];
-{ const g = LS.get(KEY.game, null); if (g && g.state) { game = g.state; undoStack = g.undo || []; } }
+{ const g = LS.get(KEY.game, null); if (g && g.state) { game = g.state; undoStack = g.undo || []; if (!game.log) game.log = []; } }
+let history = LS.get(KEY.history, []);   // abgeschlossene/abgebrochene Spiele für die Gesamtstatistik
+const HISTORY_MAX = 150;
+// Aktuelles Spiel ins Archiv übernehmen (nur wenn mindestens eine Aufnahme gespielt wurde)
+function archiveGame(){
+  if (!game || !game.log || !game.log.length || game.archived) return;
+  history.push({ date:Date.now(), names:game.players.map(p => p.name), s:game.settings,
+    winner:game.phase === 'matchWon' ? game.players[game.winner].name : null, log:game.log });
+  if (history.length > HISTORY_MAX) history = history.slice(-HISTORY_MAX);
+  try { localStorage.setItem(KEY.history, JSON.stringify(history)); }
+  catch(e){ history = history.slice(-40); LS.set(KEY.history, history); }
+  game.archived = true;
+}
+function discardGame(){ archiveGame(); game = null; undoStack = []; saveGame(); }
 
 const saveSettings = () => LS.set(KEY.settings, settings);
 const savePlayers  = () => LS.set(KEY.players, setupPlayers);
@@ -577,13 +650,25 @@ function createGame(names, s){
     players:names.map(n => newPlayer(n, s)),
     cur:0, legStarter:0, legNo:1, setNo:1, legInSet:1,
     visit:[], visitStart:s.start, visitOpened:!s.doubleIn,
-    phase:'play', pending:null, winner:null, setWon:false, lastCO:0, lastCODarts:0 };
+    phase:'play', pending:null, log:[], winner:null, setWon:false, lastCO:0, lastCODarts:0 };
 }
 let flashBusy = false, flashTimer = null;
 const canThrow = () => game && game.phase === 'play' && !game.pending && !flashBusy;
 
+// Undo-Schnappschüsse ohne das (wachsende) Protokoll – nur dessen Länge wird gemerkt
+function snapshot(){
+  const { log, ...rest } = game, snap = clone(rest);
+  snap.logLen = (log || []).length;
+  return snap;
+}
+function restore(snap){
+  const log = game.log || [], len = snap.logLen;
+  delete snap.logLen;
+  snap.log = len == null ? log : log.slice(0, len);
+  game = snap;
+}
 function pushUndo(){
-  undoStack.push(clone(game));
+  undoStack.push(snapshot());
   if (undoStack.length > UNDO_MAX) undoStack.splice(0, undoStack.length - UNDO_MAX);
 }
 function throwDart(v, m){
@@ -597,7 +682,7 @@ function throwDart(v, m){
   if (s.doubleIn && !p.opened) { if (isDouble) p.opened = true; else eff = 0; }
   const ns = p.score - eff;
   const bust = ns < 0 || (s.doubleOut && ns === 1) || (ns === 0 && s.doubleOut && !isDouble);
-  g.visit.push({ l:label(v, m), p:pts, e:eff });
+  g.visit.push({ l:label(v, m), p:pts, e:eff, v, m, b:p.score });
 
   if (bust) {
     p.score = g.visitStart; p.opened = g.visitOpened;
@@ -629,6 +714,11 @@ function endVisit(bust, checkout){
     if (total === 180) p.tot.c180++; else if (total >= 140) p.tot.c140++; else if (total >= 100) p.tot.c100++;
   }
   p.last = { d:g.visit.map(d => d.l), t:total, bust };
+  // Protokoll für die Statistik
+  if (!g.log) g.log = [];
+  g.log.push({ p:g.cur, leg:g.legNo, vi:p.leg.visits || 0, t:total, bust:bust ? 1 : 0, co:checkout ? 1 : 0,
+    d:g.visit.map(d => [d.v ?? 0, d.m ?? 0, d.b ?? 0, d.e]) });
+  p.leg.visits = (p.leg.visits || 0) + 1;
   g.visit = [];
   if (checkout) return;
   g.cur = (g.cur + 1) % g.players.length;
@@ -662,13 +752,13 @@ function restartLeg(){
   if (!undoStack.length) return;
   const legStart = undoStack.findIndex(st => st.legNo === game.legNo);
   if (legStart < 0) return;
-  game = undoStack[legStart]; undoStack = undoStack.slice(0, legStart);
+  restore(undoStack[legStart]); undoStack = undoStack.slice(0, legStart);
   hideFlash(); saveGame(); renderGame();
 }
 function undo(){
   if (!undoStack.length) return;
   hideFlash();
-  game = undoStack.pop();
+  restore(undoStack.pop());
   vib(30);
   saveGame(); renderGame();
 }
@@ -779,12 +869,13 @@ function renderWin(){
        <button class="btn" data-act="setup">Neues Spiel (Einstellungen)</button>`
     : `<button class="btn primary big" data-act="nextLeg">Neues Leg</button>
        <button class="btn" data-act="setup">Neues Spiel</button>`;
+  const statBtn = `<button class="btn" data-act="stats">📊 Statistik</button>`;
   w.innerHTML = `<div class="sheet">
       <div class="trophy">${match ? '🏆' : '🎯'}</div>
       <h3>${esc(p.name)}</h3>
       <div class="sub">${title}<br>Checkout <b>${g.lastCO}</b> mit ${g.lastCODarts} Darts</div>
       <table class="stats">${head}${rows}</table>
-      <div class="btns">${btns}
+      <div class="btns">${btns}${statBtn}
         <button class="btn" data-act="undo">↶ Letzten Dart zurücknehmen</button>
       </div></div>`;
   w.classList.remove('hidden');
@@ -829,10 +920,216 @@ function startGame(names){
   if (game && game.phase === 'play' && names === setupPlayers && !confirm('Das laufende Spiel wird verworfen. Neues Spiel starten?')) return;
   recent = [...names, ...recent.filter(n => !names.includes(n))].slice(0, 16);
   LS.set(KEY.recent, recent);
+  archiveGame();
   game = createGame(names, settings);
   undoStack = [];
   saveGame(); showScreen('game');
 }
+
+/* ====================================================================
+   Statistik
+   ==================================================================== */
+let stScope = null, stPlayer = null, stLegSel = -1;
+const pct = (a, b) => b ? (a / b * 100).toFixed(1) + ' %' : '–';
+const oneDartFinish = (b, DO) => b > 0 && THROWS.some(t => t.p === b && (!DO || t.m === 2));
+const BUCKETS = [['180', 180, 180], ['140–179', 140, 179], ['100–139', 100, 139], ['60–99', 60, 99], ['40–59', 40, 59], ['20–39', 20, 39], ['0–19', 0, 19]];
+
+function stEntries(scope){
+  const list = scope === 'all' ? history.slice() : [];
+  if (game && game.log && game.log.length && !game.archived)
+    list.push({ names:game.players.map(p => p.name), s:game.settings, log:game.log, current:true,
+      winner:game.phase === 'matchWon' ? game.players[game.winner].name : null });
+  return list;
+}
+function stNames(entries){
+  const cnt = new Map();
+  entries.forEach(en => en.log.forEach(v => { const n = en.names[v.p]; cnt.set(n, (cnt.get(n) || 0) + v.d.length); }));
+  const cur = game ? game.players.map(p => p.name).filter(n => cnt.has(n)) : [];
+  return [...cur, ...[...cnt.keys()].filter(n => !cur.includes(n)).sort((a, b) => cnt.get(b) - cnt.get(a))];
+}
+function statsFor(name, entries){
+  const S = { games:0, wins:0, finished:0, darts:0, pts:0, f9d:0, f9p:0, visits:0, hi:0, c180:0, c140:0, c100:0, c60:0,
+    busts:0, att:0, hits:0, hf:0, f100:0, miss:0, sgl:0, dbl:0, tpl:0, b25:0, b50:0,
+    buckets:BUCKETS.map(() => 0), fields:{}, outs:{}, legs:[] };
+  entries.forEach((en, gi) => {
+    const pi = en.names.indexOf(name);
+    if (pi < 0 || !en.log.some(v => v.p === pi)) return;
+    S.games++;
+    if (!en.current || en.winner) S.finished += en.winner ? 1 : 0;
+    if (en.winner === name) S.wins++;
+    const DO = en.s.doubleOut, legs = new Map();
+    for (const v of en.log) {
+      if (v.p !== pi) continue;
+      const n = v.d.length;
+      S.darts += n; S.pts += v.t; S.visits++;
+      if (v.vi < 3) { S.f9d += n; S.f9p += v.t; }
+      if (v.bust) S.busts++;
+      else {
+        S.hi = Math.max(S.hi, v.t);
+        if (v.t === 180) S.c180++; else if (v.t >= 140) S.c140++; else if (v.t >= 100) S.c100++; else if (v.t >= 60) S.c60++;
+        const bi = BUCKETS.findIndex(([, lo, hi]) => v.t >= lo && v.t <= hi); if (bi >= 0) S.buckets[bi]++;
+      }
+      for (const [dv, dm, b] of v.d) {
+        if (!dv || !dm) S.miss++;
+        else {
+          const k = dv === 25 ? (dm === 2 ? 'b50' : 'b25') : (dm === 3 ? 't' : dm === 2 ? 'd' : 's') + dv;
+          S.fields[k] = (S.fields[k] || 0) + 1;
+          if (dv === 25) dm === 2 ? S.b50++ : S.b25++;
+          else if (dm === 3) S.tpl++; else if (dm === 2) S.dbl++; else S.sgl++;
+        }
+        if (oneDartFinish(b, DO)) S.att++;
+      }
+      let L = legs.get(v.leg);
+      if (!L) { L = { leg:v.leg, game:gi, darts:0, pts:0, won:false, co:0, current:!!en.current }; legs.set(v.leg, L); }
+      L.darts += n; L.pts += v.t;
+      if (v.co) {
+        S.hits++; S.hf = Math.max(S.hf, v.t); if (v.t >= 100) S.f100++;
+        const last = v.d[v.d.length - 1], lab = label(last[0], last[1]);
+        S.outs[lab] = (S.outs[lab] || 0) + 1;
+        L.won = true; L.co = v.t;
+      }
+    }
+    S.legs.push(...legs.values());
+  });
+  const won = S.legs.filter(l => l.won);
+  S.legsWon = won.length;
+  S.bestLeg = won.length ? Math.min(...won.map(l => l.darts)) : 0;
+  S.avgLegDarts = won.length ? (won.reduce((a, l) => a + l.darts, 0) / won.length).toFixed(1) : '–';
+  return S;
+}
+
+function tile(label, value, sub, cls){ return `<div class="tile ${cls || ''}"><div><div class="tl">${label}</div>${sub ? `<div class="ts">${sub}</div>` : ''}</div><div class="tv">${value}</div></div>`; }
+function tileV(label, value, sub){ return `<div class="tile"><div class="tl">${label}</div><div class="tv">${value}</div>${sub ? `<div class="ts">${sub}</div>` : ''}</div>`; }
+function barRows(rows, max){
+  return `<div class="bars">${rows.map(([l, n, sub, bad]) => `<div class="bl">${l}</div>
+    <div class="bt"><div class="bf${bad ? ' bad' : ''}" style="width:${max ? n / max * 100 : 0}%"></div></div>
+    <div class="bn">${n}${sub ? ` <small>${sub}</small>` : ''}</div>`).join('')}</div>`;
+}
+function heatColor(c, max){
+  if (!c) return '#161b22';
+  const t = Math.sqrt(c / max), a = [0x2a, 0x33, 0x40], b = [0xff, 0xcc, 0x33];
+  return '#' + a.map((x, i) => Math.round(x + (b[i] - x) * t).toString(16).padStart(2, '0')).join('');
+}
+function heatBoard(S){
+  const max = Math.max(1, ...Object.values(S.fields));
+  const f = k => S.fields[k] || 0;
+  let h = `<circle r="218" fill="#0f0f0f"/>`;
+  ORDER.forEach((n, i) => {
+    const a1 = -90 + i * 18 - 9, a2 = a1 + 18, st = `stroke="#3a4350" stroke-width="1"`;
+    const seg = (k, r1, r2) => `<path data-f="${k}" d="${sector(r1, r2, a1, a2)}" fill="${heatColor(f(k), max)}" ${st}/>`;
+    h += seg('s' + n, R.obull, R.tIn) + seg('t' + n, R.tIn, R.tOut) + seg('s' + n, R.tOut, R.dIn) + seg('d' + n, R.dIn, R.dOut);
+    const [tx, ty] = pol(R.num, -90 + i * 18);
+    h += `<text x="${tx}" y="${ty}" fill="#c9d1d9" font-size="22" font-weight="800" text-anchor="middle" dominant-baseline="central" pointer-events="none">${n}</text>`;
+  });
+  h += `<circle data-f="b25" r="${R.obull}" fill="${heatColor(f('b25'), max)}" stroke="#3a4350"/>`;
+  h += `<circle data-f="b50" r="${R.bull}" fill="${heatColor(f('b50'), max)}" stroke="#3a4350"/>`;
+  return `<svg id="heat" viewBox="-219 -219 438 438">${h}</svg>
+    <div class="heatscale">selten <span class="g" style="background:linear-gradient(90deg,${heatColor(1, 100)},${heatColor(100, 100)})"></span> oft</div>
+    <div class="heatcap" id="heatcap">Feld antippen für Details</div>`;
+}
+const fieldName = k => k === 'b50' ? 'Bull (50)' : k === 'b25' ? '25' : (k[0] === 't' ? 'Triple ' : k[0] === 'd' ? 'Double ' : 'Single ') + k.slice(1);
+
+function renderStats(){
+  const body = $('#statsBody');
+  if (!stScope) stScope = game && game.log && game.log.length && !game.archived ? 'game' : 'all';
+  const entries = stEntries(stScope), names = stNames(entries);
+  if (!names.includes(stPlayer)) stPlayer = names[0] || null;
+  const hasGame = game && game.log && game.log.length && !game.archived;
+  let h = `<div class="seg st-seg" id="stScope">
+    <button data-sc="game" class="${stScope === 'game' ? 'on' : ''}" ${hasGame ? '' : 'disabled style="opacity:.35"'}>Aktuelles Spiel</button>
+    <button data-sc="all" class="${stScope === 'all' ? 'on' : ''}">Gesamt</button></div>`;
+  if (!stPlayer) { body.innerHTML = h + `<div class="empty-st">Noch keine Daten.<br>Spiele ein paar Aufnahmen – die Statistik füllt sich automatisch.</div>`; return; }
+
+  h += `<div class="st-chips" id="stChips">${names.map(n => `<button class="chip${n === stPlayer ? ' on' : ''}" data-pl="${esc(n)}">${esc(n)}</button>`).join('')}</div>`;
+
+  // Vergleichstabelle
+  if (names.length > 1) {
+    const rows = names.map(n => { const q = statsFor(n, entries); return `<tr data-pl="${esc(n)}" class="${n === stPlayer ? 'win' : ''}">
+      <td>${esc(n)}</td><td>${avg(q.pts, q.darts)}</td><td>${avg(q.f9p, q.f9d)}</td><td>${pct(q.hits, q.att)}</td>
+      <td>${q.c180}</td><td>${q.hf || '–'}</td><td>${q.legsWon}/${q.legs.length}</td></tr>`; }).join('');
+    h += `<div class="card cmp"><h2>Vergleich</h2><table class="stats"><tr><th>Spieler</th><th>Ø</th><th>First 9</th><th>CO %</th><th>180</th><th>HF</th><th>Legs</th></tr>${rows}</table></div>`;
+  }
+
+  const S = statsFor(stPlayer, entries);
+  h += `<div class="tiles">
+    ${tile('3-Dart-Durchschnitt', avg(S.pts, S.darts), `${S.darts} Darts · ${S.visits} Aufnahmen`, 'hero')}
+    ${tileV('First 9 Ø', avg(S.f9p, S.f9d), 'erste 9 Darts je Leg')}
+    ${tileV('Checkout-Quote', pct(S.hits, S.att), `${S.hits} von ${S.att} Versuchen`)}
+    ${tileV('Höchstes Finish', S.hf || '–', `${S.f100}× 100+ Finish`)}
+    ${tileV('Höchste Aufnahme', S.hi || '–', `${S.busts} Bust${S.busts === 1 ? '' : 's'}`)}
+    ${tileV('Legs gewonnen', `${S.legsWon}<small style="font-size:18px;color:var(--muted)"> / ${S.legs.length}</small>`, pct(S.legsWon, S.legs.length))}
+    ${tileV('Bestes Leg', S.bestLeg ? S.bestLeg + ' Darts' : '–', `Ø ${S.avgLegDarts} Darts je gewonnenem Leg`)}
+    ${stScope === 'all' ? tileV('Spiele', S.games, `${S.wins} gewonnen`) : ''}
+    ${tileV('Punkte pro Dart', S.darts ? (S.pts / S.darts).toFixed(2) : '–', `${S.pts} Punkte gesamt`)}
+  </div>`;
+
+  // Aufnahmen
+  const vMax = Math.max(1, ...S.buckets, S.busts);
+  h += `<div class="card"><h2>Aufnahmen</h2>
+    <div class="tiles" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px">
+      ${tileV('180', S.c180)}${tileV('140+', S.c140)}${tileV('100+', S.c100)}${tileV('60+', S.c60)}</div>
+    ${barRows([...BUCKETS.map(([l], i) => [l, S.buckets[i], pct(S.buckets[i], S.visits)]), ['Bust', S.busts, pct(S.busts, S.visits), true]], vMax)}
+  </div>`;
+
+  // Doppel / Checkout
+  const outs = Object.entries(S.outs).sort((a, b) => b[1] - a[1]);
+  h += `<div class="card"><h2>Checkout</h2><div class="kv">
+      <div>Checkout-Quote</div><div>${pct(S.hits, S.att)}</div>
+      <div>Treffer / Versuche aufs Finish</div><div>${S.hits} / ${S.att}</div>
+      <div>Höchstes Finish</div><div>${S.hf || '–'}</div>
+      <div>Finishes ab 100</div><div>${S.f100}</div>
+      <div>Ø Darts pro gewonnenem Leg</div><div>${S.avgLegDarts}</div></div>
+    ${outs.length ? `<h2 style="margin-top:14px">Lieblings-Finish-Felder</h2><div class="outs">${outs.slice(0, 8).map(([k, c]) => `<span>${esc(k)}<small>${c}×</small></span>`).join('')}</div>` : ''}
+    <div class="ts" style="color:var(--muted);font-size:12px;margin-top:10px">Ein Versuch zählt jeder Dart, der mit einem einzigen Dart hätte checken können (z. B. Rest 40 → D20).</div>
+  </div>`;
+
+  // Treffer
+  const thr = S.darts;
+  h += `<div class="card"><h2>Trefferbild</h2>${heatBoard(S)}
+    <div style="height:12px"></div>
+    ${barRows([['Single', S.sgl, pct(S.sgl, thr)], ['Double', S.dbl, pct(S.dbl, thr)], ['Triple', S.tpl, pct(S.tpl, thr)],
+      ['25', S.b25, pct(S.b25, thr)], ['Bull', S.b50, pct(S.b50, thr)], ['Daneben', S.miss, pct(S.miss, thr), true]],
+      Math.max(1, S.sgl, S.dbl, S.tpl, S.b25, S.b50, S.miss))}
+  </div>`;
+
+  // Leg-Verlauf
+  const legs = S.legs.slice(-30);
+  if (legs.length) {
+    const aMax = Math.max(...legs.map(l => l.darts ? l.pts / l.darts * 3 : 0), 1);
+    h += `<div class="card"><h2>Ø pro Leg (letzte ${legs.length})</h2>
+      <div class="trend" id="trend">${legs.map((l, i) => { const a = l.darts ? l.pts / l.darts * 3 : 0;
+        return `<button data-i="${i}" class="${l.won ? 'won' : 'lost'}${i === stLegSel ? ' sel' : ''}" aria-label="Leg ${i + 1}"><span style="height:${Math.max(2, a / aMax * 100)}%"></span></button>`; }).join('')}</div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>gewonnen</span><span><i style="background:#6b7682"></i>verloren / offen</span></div>
+      <div class="trendcap" id="trendcap">Balken antippen für Details</div></div>`;
+  }
+  if (stScope === 'all') h += `<button class="btn danger" id="stReset" style="width:100%;margin-top:4px">Gesamtstatistik löschen</button>`;
+  body.innerHTML = h;
+  body._legs = legs; body._S = S;
+}
+function openStats(){ statsReturn = currentScreen === 'game' ? 'game' : 'setup'; stScope = null; stLegSel = -1; showScreen('stats'); $('#statsBody').scrollTop = 0; }
+$('#setupStats').addEventListener('click', openStats);
+$('#statsBack').addEventListener('click', () => showScreen(statsReturn === 'game' && game ? 'game' : 'setup'));
+$('#statsBody').addEventListener('click', e => {
+  const body = $('#statsBody');
+  const sc = e.target.closest('[data-sc]'); if (sc && !sc.disabled) { stScope = sc.dataset.sc; stLegSel = -1; renderStats(); return; }
+  const pl = e.target.closest('[data-pl]'); if (pl) { stPlayer = pl.dataset.pl; stLegSel = -1; renderStats(); return; }
+  const fld = e.target.closest('[data-f]');
+  if (fld) {
+    const k = fld.dataset.f, S = body._S, c = S.fields[k] || 0;
+    $('#heatcap').innerHTML = `<b>${fieldName(k)}</b>: ${c}× getroffen (${pct(c, S.darts)} aller Darts)`;
+    return;
+  }
+  const bar = e.target.closest('#trend button');
+  if (bar) {
+    stLegSel = +bar.dataset.i; const l = body._legs[stLegSel];
+    document.querySelectorAll('#trend button').forEach((b, i) => b.classList.toggle('sel', i === stLegSel));
+    $('#trendcap').innerHTML = `<b>${l.current ? 'Aktuelles Spiel, ' : ''}Leg ${l.leg}</b> · Ø ${avg(l.pts, l.darts)} · ${l.darts} Darts · ${l.won ? 'gewonnen mit ' + l.co + ' Checkout' : 'nicht gewonnen'}`;
+    return;
+  }
+  if (e.target.id === 'stReset' && confirm('Gesamtstatistik aller früheren Spiele wirklich löschen?')) {
+    history = []; LS.del(KEY.history); renderStats();
+  }
+});
 
 /* ====================================================================
    Navigation / Bildschirm wach halten
@@ -846,12 +1143,16 @@ async function keepAwake(on){
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !$('#game').classList.contains('hidden')) keepAwake(true); });
 
+let currentScreen = 'setup', statsReturn = 'setup';
 function showScreen(name){
+  currentScreen = name;
   $('#setup').classList.toggle('hidden', name !== 'setup');
   $('#game').classList.toggle('hidden', name !== 'game');
+  $('#stats').classList.toggle('hidden', name !== 'stats');
   $('#menu').classList.add('hidden');
   hideFlash();
   if (name === 'game') { renderGame(); applyZoom(); keepAwake(true); }
+  else if (name === 'stats') { $('#win').classList.add('hidden'); renderStats(); }
   else { $('#win').classList.add('hidden'); renderSetup(); keepAwake(false); }
 }
 
@@ -934,12 +1235,13 @@ function handleAction(act){
     case 'nextLeg': startNextLeg(); break;
     case 'rematch': startGame(game.players.map(p => p.name)); break;
     case 'setup':
-      if (game && game.phase === 'matchWon') { game = null; undoStack = []; saveGame(); }
+      if (game && game.phase === 'matchWon') discardGame();
       showScreen('setup'); break;
+    case 'stats': openStats(); break;
     case 'restartLeg':
       if (confirm('Aktuelles Leg wirklich neu starten?')) { restartLeg(); $('#menu').classList.add('hidden'); } break;
     case 'quit':
-      if (confirm('Spiel wirklich beenden? Der Spielstand wird gelöscht.')) { game = null; undoStack = []; saveGame(); showScreen('setup'); } break;
+      if (confirm('Spiel wirklich beenden? Der Spielstand wird gelöscht.')) { discardGame(); showScreen('setup'); } break;
   }
 }
 ['#menu', '#win'].forEach(sel => $(sel).addEventListener('click', e => {
